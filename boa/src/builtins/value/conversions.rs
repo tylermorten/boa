@@ -13,6 +13,12 @@ impl From<String> for Value {
     }
 }
 
+impl From<Box<str>> for Value {
+    fn from(value: Box<str>) -> Self {
+        Self::string(value)
+    }
+}
+
 impl From<&Value> for String {
     fn from(value: &Value) -> Self {
         value.to_string()

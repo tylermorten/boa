@@ -1,6 +1,6 @@
 //! This module implements various structure for logic handling.
 
-use gc::{Finalize, Trace};
+use gc::{unsafe_empty_trace, Finalize, Trace};
 use std::fmt::{Display, Formatter, Result};
 
 #[cfg(feature = "serde")]
@@ -26,7 +26,7 @@ pub trait Operator {
 ///
 /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Expressions_and_Operators#Arithmetic
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, Trace, Finalize, PartialEq)]
+#[derive(Clone, Copy, Debug, Finalize, PartialEq)]
 pub enum NumOp {
     /// The addition operator produces the sum of numeric operands or string concatenation.
     ///
@@ -124,6 +124,10 @@ impl Display for NumOp {
     }
 }
 
+unsafe impl Trace for NumOp {
+    unsafe_empty_trace!();
+}
+
 /// A unary operator is one that takes a single operand/argument and performs an operation.
 ///
 /// A unary operation is an operation with only one operand. This operand comes either
@@ -137,7 +141,7 @@ impl Display for NumOp {
 /// [spec]: https://tc39.es/ecma262/#prod-UnaryExpression
 /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Expressions_and_Operators#Unary
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, Trace, Finalize, PartialEq)]
+#[derive(Clone, Copy, Debug, Finalize, PartialEq)]
 pub enum UnaryOp {
     /// The increment operator increments (adds one to) its operand and returns a value.
     ///
@@ -336,6 +340,10 @@ impl Display for UnaryOp {
     }
 }
 
+unsafe impl Trace for UnaryOp {
+    unsafe_empty_trace!();
+}
+
 /// A bitwise operator is an operator used to perform bitwise operations
 /// on bit patterns or binary numerals that involve the manipulation of individual bits.
 ///
@@ -344,7 +352,7 @@ impl Display for UnaryOp {
 ///
 /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Expressions_and_Operators#Bitwise
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, Trace, Finalize, PartialEq)]
+#[derive(Clone, Copy, Debug, Finalize, PartialEq)]
 pub enum BitOp {
     /// Performs the AND operation on each pair of bits. a AND b yields 1 only if both a and b are 1.
     ///
@@ -447,6 +455,10 @@ impl Display for BitOp {
     }
 }
 
+unsafe impl Trace for BitOp {
+    unsafe_empty_trace!();
+}
+
 /// A comparison operator compares its operands and returns a logical value based on whether the comparison is true.
 ///
 /// The operands can be numerical, string, logical, or object values. Strings are compared based on standard
@@ -463,7 +475,7 @@ impl Display for BitOp {
 /// [spec]: tc39.es/ecma262/#sec-testing-and-comparison-operations
 /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Expressions_and_Operators#Comparison
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, Trace, Finalize, PartialEq)]
+#[derive(Clone, Copy, Debug, Finalize, PartialEq)]
 pub enum CompOp {
     /// The equality operator converts the operands if they are not of the same type, then applies strict comparison.
     ///
@@ -614,6 +626,10 @@ impl Display for CompOp {
     }
 }
 
+unsafe impl Trace for CompOp {
+    unsafe_empty_trace!();
+}
+
 /// Logical operators are typically used with Boolean (logical) values; when they are, they return a Boolean value.
 ///
 /// However, the `&&` and `||` operators actually return the value of one of the specified operands,
@@ -626,7 +642,7 @@ impl Display for CompOp {
 /// [spec]: https://tc39.es/ecma262/#sec-binary-logical-operators
 /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Expressions_and_Operators#Logical
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, Trace, Finalize, PartialEq)]
+#[derive(Clone, Copy, Debug, Finalize, PartialEq)]
 pub enum LogOp {
     /// The logical AND operator returns the value of the first operand if it can be coerced into `false`;
     /// otherwise, it returns the second operand.
@@ -668,9 +684,13 @@ impl Display for LogOp {
     }
 }
 
+unsafe impl Trace for LogOp {
+    unsafe_empty_trace!();
+}
+
 /// This represents a binary operation between two values.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, Trace, Finalize, PartialEq)]
+#[derive(Clone, Copy, Debug, Finalize, PartialEq)]
 pub enum BinOp {
     /// Numeric operation.
     ///
@@ -773,6 +793,10 @@ impl Display for BinOp {
     }
 }
 
+unsafe impl Trace for BinOp {
+    unsafe_empty_trace!();
+}
+
 /// An assignment operator assigns a value to its left operand based on the value of its right operand.
 ///
 /// The simple assignment operator is equal (`=`), which assigns the value of its right operand to its
@@ -787,7 +811,7 @@ impl Display for BinOp {
 /// [spec]: https://tc39.es/ecma262/#prod-AssignmentOperator
 /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Expressions_and_Operators#Assignment
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, Trace, Finalize, PartialEq)]
+#[derive(Clone, Copy, Debug, Finalize, PartialEq)]
 pub enum AssignOp {
     /// The addition assignment operator adds the value of the right operand to a variable and assigns the result to the variable.
     ///
@@ -926,6 +950,10 @@ pub enum AssignOp {
     /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Assignment_Operators#Right_shift_assignment
     Shr,
     // TODO: Add UShl (unsigned shift left).
+}
+
+unsafe impl Trace for AssignOp {
+    unsafe_empty_trace!();
 }
 
 impl Display for AssignOp {

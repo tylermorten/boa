@@ -8,7 +8,7 @@
 //! [spec]: https://tc39.es/ecma262/#sec-unary-operators
 
 use crate::syntax::{
-    ast::{keyword::Keyword, node::Node, op::UnaryOp, punc::Punctuator, token::TokenKind},
+    ast::{op::UnaryOp, Keyword, Node, Punctuator, TokenKind},
     parser::{
         expression::update::UpdateExpression, AllowAwait, AllowYield, Cursor, ParseError,
         ParseResult, TokenParser,

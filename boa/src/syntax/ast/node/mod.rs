@@ -1,89 +1,50 @@
 //! This module implements the `Node` structure, which composes the AST.
 
+pub mod array;
+pub mod block;
+pub mod declaration;
+pub mod identifier;
+pub mod operator;
+pub mod statement_list;
+
+pub use self::{
+    array::ArrayDecl,
+    block::Block,
+    declaration::{ArrowFunctionDecl, FunctionDecl, FunctionExpr, VarDecl, VarDeclList},
+    identifier::Identifier,
+    operator::{Assign, BinOp},
+    statement_list::StatementList,
+};
 use crate::syntax::ast::{
     constant::Const,
-    op::{BinOp, Operator, UnaryOp},
+    op::{Operator, UnaryOp},
 };
 use gc::{Finalize, Trace};
-use std::fmt;
+use std::{
+    cmp::Ordering,
+    fmt::{self, Display},
+};
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-/// A Javascript AST Node.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Trace, Finalize, PartialEq)]
 pub enum Node {
-    /// An array is an ordered collection of data (either primitive or object depending upon the
-    /// language).
-    ///
-    /// Arrays are used to store multiple values in a single variable.
-    /// This is compared to a variable that can store only one value.
-    ///
-    /// Each item in an array has a number attached to it, called a numeric index, that allows you
-    /// to access it. In JavaScript, arrays start at index zero and can be manipulated with various
-    /// methods.
-    ///
-    /// More information:
-    ///  - [ECMAScript reference][spec]
-    ///  - [MDN documentation][mdn]
-    ///
-    /// [spec]: https://tc39.es/ecma262/#prod-ArrayLiteral
-    /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array
-    ArrayDecl(Box<[Node]>),
+    /// Array declaration node. [More information](./array/struct.ArrayDecl.html).
+    ArrayDecl(ArrayDecl),
 
-    /// An arrow function expression is a syntactically compact alternative to a regular function
-    /// expression.
-    ///
-    /// Arrow function expressions are ill suited as methods, and they cannot be used as
-    /// constructors. Arrow functions cannot be used as constructors and will throw an error when
-    /// used with new.
-    ///
-    /// More information:
-    ///  - [ECMAScript reference][spec]
-    ///  - [MDN documentation][mdn]
-    ///
-    /// [spec]: https://tc39.es/ecma262/#prod-ArrowFunction
-    /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions
-    ArrowFunctionDecl(Box<[FormalParameter]>, Box<Node>),
+    /// An arrow function expression node. [More information](./arrow_function/struct.ArrowFunctionDecl.html).
+    ArrowFunctionDecl(ArrowFunctionDecl),
 
-    /// An assignment operator assigns a value to its left operand based on the value of its right
-    /// operand.
-    ///
-    /// Assignment operator (`=`), assigns the value of its right operand to its left operand.
-    ///
-    /// More information:
-    ///  - [ECMAScript reference][spec]
-    ///  - [MDN documentation][mdn]
-    ///
-    /// [spec]: https://tc39.es/ecma262/#prod-AssignmentExpression
-    /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Assignment_Operators
-    Assign(Box<Node>, Box<Node>),
+    /// An assignment operator node. [More information](./operator/struct.Assign.html).
+    Assign(Assign),
 
-    /// Binary operators requires two operands, one before the operator and one after the operator.
-    ///
-    /// More information:
-    ///  - [MDN documentation][mdn]
-    ///
-    /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Expressions_and_Operators#Operators
-    BinOp(BinOp, Box<Node>, Box<Node>),
+    /// A binary operator node. [More information](./operator/struct.BinOp.html).
+    BinOp(BinOp),
 
-    /// A `block` statement (or compound statement in other languages) is used to group zero or
-    /// more statements.
-    ///
-    /// The block statement is often called compound statement in other languages.
-    /// It allows you to use multiple statements where JavaScript expects only one statement.
-    /// Combining statements into blocks is a common practice in JavaScript. The opposite behavior
-    /// is possible using an empty statement, where you provide no statement, although one is
-    /// required.
-    ///
-    /// More information:
-    ///  - [ECMAScript reference][spec]
-    ///  - [MDN documentation][mdn]
-    ///
-    /// [spec]: https://tc39.es/ecma262/#prod-BlockStatement
-    /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/block
-    Block(Box<[Node]>),
+    /// A Block node. [More information](./block/struct.Block.html).
+    Block(Block),
 
     /// The `break` statement terminates the current loop, switch, or label statement and transfers
     /// program control to the statement following the terminated statement.
@@ -99,7 +60,7 @@ pub enum Node {
     ///
     /// [spec]: https://tc39.es/ecma262/#prod-BreakStatement
     /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/break
-    Break(Option<String>),
+    Break(Option<Box<str>>),
 
     /// Calling the function actually performs the specified actions with the indicated parameters.
     ///
@@ -163,7 +124,7 @@ pub enum Node {
     /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/const
     /// [identifier]: https://developer.mozilla.org/en-US/docs/Glossary/identifier
     /// [expression]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Expressions_and_Operators#Expressions
-    ConstDecl(Box<[(String, Node)]>),
+    ConstDecl(Box<[(Box<str>, Node)]>),
 
     /// The `continue` statement terminates execution of the statements in the current iteration of
     /// the current or labeled loop, and continues execution of the loop with the next iteration.
@@ -178,7 +139,7 @@ pub enum Node {
     ///
     /// [spec]: https://tc39.es/ecma262/#prod-ContinueStatement
     /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/continue
-    Continue(Option<String>),
+    Continue(Option<Box<str>>),
 
     /// The `do...while` statement creates a loop that executes a specified statement until the
     /// test condition evaluates to false.
@@ -194,42 +155,11 @@ pub enum Node {
     /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/do...while
     DoWhileLoop(Box<Node>, Box<Node>),
 
-    /// The `function` declaration (function statement) defines a function with the specified
-    /// parameters.
-    ///
-    /// A function created with a function declaration is a `Function` object and has all the
-    /// properties, methods and behavior of `Function`.
-    ///
-    /// A function can also be created using an expression (see function expression).
-    ///
-    /// By default, functions return `undefined`. To return any other value, the function must have
-    /// a return statement that specifies the value to return.
-    ///
-    /// More information:
-    ///  - [ECMAScript reference][spec]
-    ///  - [MDN documentation][mdn]
-    ///
-    /// [spec]: https://tc39.es/ecma262/#sec-terms-and-definitions-function
-    /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function
-    FunctionDecl(String, Box<[FormalParameter]>, Box<Node>),
+    /// A function declaration node. [More information](./declaration/struct.FunctionDecl.html).
+    FunctionDecl(FunctionDecl),
 
-    /// The `function` expression defines a function with the specified parameters.
-    ///
-    /// A function created with a function expression is a `Function` object and has all the
-    /// properties, methods and behavior of `Function`.
-    ///
-    /// A function can also be created using a declaration (see function expression).
-    ///
-    /// By default, functions return `undefined`. To return any other value, the function must have
-    /// a return statement that specifies the value to return.
-    ///
-    /// More information:
-    ///  - [ECMAScript reference][spec]
-    ///  - [MDN documentation][mdn]
-    ///
-    /// [spec]: https://tc39.es/ecma262/#sec-terms-and-definitions-function
-    /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/function
-    FunctionExpr(Option<String>, Box<[FormalParameter]>, Box<Node>),
+    /// A function expressino node. [More information](./declaration/struct.FunctionExpr.html)
+    FunctionExpr(FunctionExpr),
 
     /// This property accessor provides access to an object's properties by using the
     /// [dot notation][mdn].
@@ -252,7 +182,7 @@ pub enum Node {
     ///
     /// [spec]: https://tc39.es/ecma262/#sec-property-accessors
     /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Property_accessors#Dot_notation
-    GetConstField(Box<Node>, String),
+    GetConstField(Box<Node>, Box<str>),
 
     /// This property accessor provides access to an object's properties by using the
     /// [bracket notation][mdn].
@@ -331,25 +261,10 @@ pub enum Node {
     ///
     /// [spec]: https://tc39.es/ecma262/#sec-let-and-const-declarations
     /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/let
-    LetDecl(Box<[(String, Option<Node>)]>),
+    LetDecl(Box<[(Box<str>, Option<Node>)]>),
 
-    /// An `identifier` is a sequence of characters in the code that identifies a variable,
-    /// function, or property.
-    ///
-    /// In JavaScript, identifiers are case-sensitive and can contain Unicode letters, $, _, and
-    /// digits (0-9), but may not start with a digit.
-    ///
-    /// An identifier differs from a string in that a string is data, while an identifier is part
-    /// of the code. In JavaScript, there is no way to convert identifiers to strings, but
-    /// sometimes it is possible to parse strings into identifiers.
-    ///
-    /// More information:
-    ///  - [ECMAScript reference][spec]
-    ///  - [MDN documentation][mdn]
-    ///
-    /// [spec]: https://tc39.es/ecma262/#prod-Identifier
-    /// [mdn]: https://developer.mozilla.org/en-US/docs/Glossary/Identifier
-    Local(String),
+    /// A local identifier node. [More information](./local/struct.Local.html).
+    Identifier(Identifier),
 
     /// The `new` operator lets developers create an instance of a user-defined object type or of
     /// one of the built-in object types that has a constructor function.
@@ -445,14 +360,6 @@ pub enum Node {
     /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Spread_syntax
     Spread(Box<Node>),
 
-    /// Similar to `Node::Block` but without the braces
-    ///
-    /// More information:
-    ///  - [ECMAScript reference][spec]
-    ///
-    /// [spec]: https://tc39.es/ecma262/#prod-StatementList
-    StatementList(Box<[Node]>),
-
     /// The `throw` statement throws a user-defined exception.
     ///
     /// Syntax: `throw expression;`
@@ -496,12 +403,7 @@ pub enum Node {
     ///
     /// [spec]: https://tc39.es/ecma262/#prod-TryStatement
     /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/try...catch
-    Try(
-        Box<Node>,
-        Option<Box<Node>>,
-        Option<Box<Node>>,
-        Option<Box<Node>>,
-    ),
+    Try(Block, Option<(Option<Identifier>, Block)>, Option<Block>),
 
     /// The JavaScript `this` keyword refers to the object it belongs to.
     ///
@@ -527,25 +429,8 @@ pub enum Node {
     /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Expressions_and_Operators#Unary_operators
     UnaryOp(UnaryOp, Box<Node>),
 
-    /// The `var` statement declares a variable, optionally initializing it to a value.
-    ///
-    /// var declarations, wherever they occur, are processed before any code is executed. This is
-    /// called hoisting, and is discussed further below.
-    ///
-    /// The scope of a variable declared with var is its current execution context, which is either
-    /// the enclosing function or, for variables declared outside any function, global. If you
-    /// re-declare a JavaScript variable, it will not lose its value.
-    ///
-    /// Assigning a value to an undeclared variable implicitly creates it as a global variable (it
-    /// becomes a property of the global object) when the assignment is executed.
-    ///
-    /// More information:
-    ///  - [ECMAScript reference][spec]
-    ///  - [MDN documentation][mdn]
-    ///
-    /// [spec]: https://tc39.es/ecma262/#prod-VariableStatement
-    /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/var
-    VarDecl(Box<[(String, Option<Node>)]>),
+    /// Array declaration node. [More information](./declaration/struct.VarDeclList.html).
+    VarDeclList(VarDeclList),
 
     /// The `while` statement creates a loop that executes a specified statement as long as the
     /// test condition evaluates to `true`.
@@ -564,7 +449,7 @@ pub enum Node {
 impl Operator for Node {
     fn get_assoc(&self) -> bool {
         match *self {
-            Self::UnaryOp(_, _) | Self::TypeOf(_) | Self::If(_, _, _) | Self::Assign(_, _) => false,
+            Self::UnaryOp(_, _) | Self::TypeOf(_) | Self::If(_, _, _) | Self::Assign(_) => false,
             _ => true,
         }
     }
@@ -581,70 +466,43 @@ impl Operator for Node {
             | Self::UnaryOp(UnaryOp::Tilde, _)
             | Self::UnaryOp(UnaryOp::Minus, _)
             | Self::TypeOf(_) => 4,
-            Self::BinOp(op, _, _) => op.get_precedence(),
+            Self::BinOp(inner) => inner.op().get_precedence(),
             Self::If(_, _, _) => 15,
             // 16 should be yield
-            Self::Assign(_, _) => 17,
+            Self::Assign(_) => 17,
             _ => 19,
         }
     }
 }
 
-impl fmt::Display for Node {
+impl Display for Node {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.display(f, 0)
     }
 }
 
+impl AsRef<Node> for Node {
+    fn as_ref(&self) -> &Self {
+        &self
+    }
+}
+
 impl Node {
-    /// Creates an `ArrayDecl` AST node.
-    pub fn array_decl<N>(nodes: N) -> Self
-    where
-        N: Into<Box<[Self]>>,
-    {
-        Self::ArrayDecl(nodes.into())
-    }
+    /// Returns a node ordering based on the hoistability of each node.
+    pub(crate) fn hoistable_order(a: &Node, b: &Node) -> Ordering {
+        match (a, b) {
+            (Node::FunctionDecl(_), Node::FunctionDecl(_)) => Ordering::Equal,
+            (_, Node::FunctionDecl(_)) => Ordering::Greater,
+            (Node::FunctionDecl(_), _) => Ordering::Less,
 
-    /// Creates an `ArraowFunctionDecl` AST node.
-    pub fn arrow_function_decl<P, B>(params: P, body: B) -> Self
-    where
-        P: Into<Box<[FormalParameter]>>,
-        B: Into<Box<Self>>,
-    {
-        Self::ArrowFunctionDecl(params.into(), body.into())
-    }
-
-    /// Creates an `Assign` AST node.
-    pub fn assign<L, R>(lhs: L, rhs: R) -> Self
-    where
-        L: Into<Box<Self>>,
-        R: Into<Box<Self>>,
-    {
-        Self::Assign(lhs.into(), rhs.into())
-    }
-
-    /// Creates a `BinOp` AST node.
-    pub fn bin_op<O, L, R>(op: O, lhs: L, rhs: R) -> Self
-    where
-        O: Into<BinOp>,
-        L: Into<Box<Self>>,
-        R: Into<Box<Self>>,
-    {
-        Self::BinOp(op.into(), lhs.into(), rhs.into())
-    }
-
-    /// Creates a `Block` AST node.
-    pub fn block<N>(nodes: N) -> Self
-    where
-        N: Into<Box<[Self]>>,
-    {
-        Self::Block(nodes.into())
+            (_, _) => Ordering::Equal,
+        }
     }
 
     /// Creates a `Break` AST node.
     pub fn break_node<OL, L>(label: OL) -> Self
     where
-        L: Into<String>,
+        L: Into<Box<str>>,
         OL: Into<Option<L>>,
     {
         Self::Break(label.into().map(L::into))
@@ -680,7 +538,7 @@ impl Node {
     /// Creates a `ConstDecl` AST node.
     pub fn const_decl<D>(decl: D) -> Self
     where
-        D: Into<Box<[(String, Self)]>>,
+        D: Into<Box<[(Box<str>, Self)]>>,
     {
         Self::ConstDecl(decl.into())
     }
@@ -688,7 +546,7 @@ impl Node {
     /// Creates a `Continue` AST node.
     pub fn continue_node<OL, L>(label: OL) -> Self
     where
-        L: Into<String>,
+        L: Into<Box<str>>,
         OL: Into<Option<L>>,
     {
         Self::Continue(label.into().map(L::into))
@@ -703,32 +561,11 @@ impl Node {
         Self::DoWhileLoop(body.into(), condition.into())
     }
 
-    /// Creates a `FunctionDecl` AST node.
-    pub fn function_decl<N, P, B>(name: N, params: P, body: B) -> Self
-    where
-        N: Into<String>,
-        P: Into<Box<[FormalParameter]>>,
-        B: Into<Box<Self>>,
-    {
-        Self::FunctionDecl(name.into(), params.into(), body.into())
-    }
-
-    /// Creates a `FunctionDecl` AST node.
-    pub fn function_expr<ON, N, P, B>(name: ON, params: P, body: B) -> Self
-    where
-        N: Into<String>,
-        ON: Into<Option<N>>,
-        P: Into<Box<[FormalParameter]>>,
-        B: Into<Box<Self>>,
-    {
-        Self::FunctionExpr(name.into().map(N::into), params.into(), body.into())
-    }
-
     /// Creates a `GetConstField` AST node.
     pub fn get_const_field<V, L>(value: V, label: L) -> Self
     where
         V: Into<Box<Self>>,
-        L: Into<String>,
+        L: Into<Box<str>>,
     {
         Self::GetConstField(value.into(), label.into())
     }
@@ -775,17 +612,9 @@ impl Node {
     /// Creates a `LetDecl` AST node.
     pub fn let_decl<I>(init: I) -> Self
     where
-        I: Into<Box<[(String, Option<Self>)]>>,
+        I: Into<Box<[(Box<str>, Option<Self>)]>>,
     {
         Self::LetDecl(init.into())
-    }
-
-    /// Creates a `Local` AST node.
-    pub fn local<N>(name: N) -> Self
-    where
-        N: Into<String>,
-    {
-        Self::Local(name.into())
     }
 
     /// Creates a `New` AST node.
@@ -832,14 +661,6 @@ impl Node {
         Self::Spread(val.into())
     }
 
-    /// Creates a `StatementList` AST node.
-    pub fn statement_list<L>(list: L) -> Self
-    where
-        L: Into<Box<[Self]>>,
-    {
-        Self::StatementList(list.into())
-    }
-
     /// Creates a `Throw` AST node.
     pub fn throw<V>(val: V) -> Self
     where
@@ -857,25 +678,20 @@ impl Node {
     }
 
     /// Creates a `Try` AST node.
-    pub fn try_node<T, OC, OP, OF, C, P, F>(try_node: T, catch: OC, param: OP, finally: OF) -> Self
+    pub fn try_node<OC, OF>(try_node: Block, catch: OC, finally: OF) -> Self
     where
-        T: Into<Box<Self>>,
-        OC: Into<Option<C>>,
-        OP: Into<Option<P>>,
-        OF: Into<Option<F>>,
-        C: Into<Box<Self>>,
-        P: Into<Box<Self>>,
-        F: Into<Box<Self>>,
+        OC: Into<Option<(Option<Identifier>, Block)>>,
+        OF: Into<Option<Block>>,
     {
-        let catch = catch.into().map(C::into);
-        let finally = finally.into().map(F::into);
+        let catch = catch.into();
+        let finally = finally.into();
 
         debug_assert!(
             catch.is_some() || finally.is_some(),
             "try/catch must have a catch or a finally block"
         );
 
-        Self::Try(try_node.into(), catch, param.into().map(P::into), finally)
+        Self::Try(try_node, catch, finally)
     }
 
     /// Creates a `This` AST node.
@@ -891,14 +707,6 @@ impl Node {
         Self::UnaryOp(op, val.into())
     }
 
-    /// Creates a `VarDecl` AST node.
-    pub fn var_decl<I>(init: I) -> Self
-    where
-        I: Into<Box<[(String, Option<Self>)]>>,
-    {
-        Self::VarDecl(init.into())
-    }
-
     /// Creates a `WhileLoop` AST node.
     pub fn while_loop<C, B>(condition: C, body: B) -> Self
     where
@@ -907,6 +715,16 @@ impl Node {
     {
         Self::WhileLoop(condition.into(), body.into())
     }
+
+    // /// Gets the lexically declared names.
+    // ///
+    // /// More information:
+    // /// <https://tc39.es/ecma262/#sec-block-static-semantics-lexicallydeclarednames>
+    // pub(crate) fn lexically_declared_names(&self) -> &[Box<str>] {
+    //     static LIST: OnceCell<Box<[Box<str>]>> = OnceCell::new();
+
+    //     LIST.get_or_init(|| unimplemented!())
+    // }
 
     /// Implements the display formatting with indentation.
     fn display(&self, f: &mut fmt::Formatter<'_>, indentation: usize) -> fmt::Result {
@@ -923,7 +741,7 @@ impl Node {
             }
             Self::ForLoop(_, _, _, _) => write!(f, "for loop"), // TODO
             Self::This => write!(f, "this"),
-            Self::Try(_, _, _, _) => write!(f, "try/catch/finally"), // TODO
+            Self::Try(_, _, _) => write!(f, "try/catch/finally"), // TODO
             Self::Break(ref l) => write!(
                 f,
                 "break{}",
@@ -943,48 +761,14 @@ impl Node {
                 }
             ),
             Self::Spread(ref node) => write!(f, "...{}", node),
-            Self::Block(ref block) => {
-                writeln!(f, "{{")?;
-                for node in block.iter() {
-                    node.display(f, indentation + 1)?;
-
-                    match node {
-                        Self::Block(_)
-                        | Self::If(_, _, _)
-                        | Self::Switch(_, _, _)
-                        | Self::FunctionDecl(_, _, _)
-                        | Self::WhileLoop(_, _)
-                        | Self::StatementList(_) => {}
-                        _ => write!(f, ";")?,
-                    }
-                    writeln!(f)?;
-                }
-                write!(f, "{}}}", indent)
-            }
-            Self::StatementList(ref list) => {
-                for node in list.iter() {
-                    node.display(f, indentation + 1)?;
-
-                    match node {
-                        Self::Block(_)
-                        | Self::If(_, _, _)
-                        | Self::Switch(_, _, _)
-                        | Self::FunctionDecl(_, _, _)
-                        | Self::WhileLoop(_, _)
-                        | Self::StatementList(_) => {}
-                        _ => write!(f, ";")?,
-                    }
-                    writeln!(f)?;
-                }
-                Ok(())
-            }
-            Self::Local(ref s) => write!(f, "{}", s),
+            Self::Block(ref block) => block.display(f, indentation),
+            Self::Identifier(ref s) => Display::fmt(s, f),
             Self::GetConstField(ref ex, ref field) => write!(f, "{}.{}", ex, field),
             Self::GetField(ref ex, ref field) => write!(f, "{}[{}]", ex, field),
             Self::Call(ref ex, ref args) => {
                 write!(f, "{}(", ex)?;
-                let arg_strs: Box<[String]> = args.iter().map(ToString::to_string).collect();
-                write!(f, "{})", arg_strs.join(", "))
+                join_nodes(f, args)?;
+                f.write_str(")")
             }
             Self::New(ref call) => {
                 let (func, args) = match call.as_ref() {
@@ -1062,45 +846,19 @@ impl Node {
                 }
                 f.write_str("}")
             }
-            Self::ArrayDecl(ref arr) => {
-                f.write_str("[")?;
-                join_nodes(f, arr)?;
-                f.write_str("]")
-            }
-            Self::FunctionDecl(ref name, ref _args, ref node) => {
-                write!(f, "function {} {{", name)?;
-                //join_nodes(f, args)?; TODO: port
-                f.write_str("} ")?;
-                node.display(f, indentation + 1)
-            }
-            Self::FunctionExpr(ref name, ref args, ref node) => {
-                write!(f, "function ")?;
-                if let Some(func_name) = name {
-                    write!(f, "{}", func_name)?;
-                }
-                write!(f, "{{")?;
-                join_nodes(f, args)?;
-                f.write_str("} ")?;
-                node.display(f, indentation + 1)
-            }
-            Self::ArrowFunctionDecl(ref args, ref node) => {
-                write!(f, "(")?;
-                join_nodes(f, args)?;
-                f.write_str(") => ")?;
-                node.display(f, indentation)
-            }
-            Self::BinOp(ref op, ref a, ref b) => write!(f, "{} {} {}", a, op, b),
+            Self::ArrayDecl(ref arr) => Display::fmt(arr, f),
+            Self::VarDeclList(ref list) => Display::fmt(list, f),
+            Self::FunctionDecl(ref decl) => decl.display(f, indentation),
+            Self::FunctionExpr(ref expr) => expr.display(f, indentation),
+            Self::ArrowFunctionDecl(ref decl) => decl.display(f, indentation),
+            Self::BinOp(ref op) => Display::fmt(op, f),
             Self::UnaryOp(ref op, ref a) => write!(f, "{}{}", op, a),
             Self::Return(Some(ref ex)) => write!(f, "return {}", ex),
             Self::Return(None) => write!(f, "return"),
             Self::Throw(ref ex) => write!(f, "throw {}", ex),
-            Self::Assign(ref ref_e, ref val) => write!(f, "{} = {}", ref_e, val),
-            Self::VarDecl(ref vars) | Self::LetDecl(ref vars) => {
-                if let Self::VarDecl(_) = *self {
-                    f.write_str("var ")?;
-                } else {
-                    f.write_str("let ")?;
-                }
+            Self::Assign(ref op) => Display::fmt(op, f),
+            Self::LetDecl(ref vars) => {
+                f.write_str("let ")?;
                 for (key, val) in vars.iter() {
                     match val {
                         Some(x) => write!(f, "{} = {}", key, x)?,
@@ -1124,7 +882,7 @@ impl Node {
 /// Utility to join multiple Nodes into a single string.
 fn join_nodes<N>(f: &mut fmt::Formatter<'_>, nodes: &[N]) -> fmt::Result
 where
-    N: fmt::Display,
+    N: Display,
 {
     let mut first = true;
     for e in nodes {
@@ -1132,7 +890,7 @@ where
             f.write_str(", ")?;
         }
         first = false;
-        write!(f, "{}", e)?;
+        Display::fmt(e, f)?;
     }
     Ok(())
 }
@@ -1142,7 +900,7 @@ where
 /// In the declaration of a function, the parameters must be identifiers,
 /// not any value like numbers, strings, or objects.
 ///```text
-///function foo(formalParametar1, formalParametar2) {
+///function foo(formalParameter1, formalParameter2) {
 ///}
 ///```
 ///
@@ -1155,15 +913,16 @@ where
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Trace, Finalize)]
 pub struct FormalParameter {
-    pub name: String,
-    pub init: Option<Box<Node>>,
-    pub is_rest_param: bool,
+    name: Box<str>,
+    init: Option<Node>,
+    is_rest_param: bool,
 }
 
 impl FormalParameter {
-    pub fn new<N>(name: N, init: Option<Box<Node>>, is_rest_param: bool) -> Self
+    /// Creates a new formal parameter.
+    pub fn new<N>(name: N, init: Option<Node>, is_rest_param: bool) -> Self
     where
-        N: Into<String>,
+        N: Into<Box<str>>,
     {
         Self {
             name: name.into(),
@@ -1171,9 +930,24 @@ impl FormalParameter {
             is_rest_param,
         }
     }
+
+    /// Gets the name of the formal parameter.
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    /// Gets the initialization node of the formal parameter, if any.
+    pub fn init(&self) -> Option<&Node> {
+        self.init.as_ref()
+    }
+
+    /// Gets wether the parameter is a rest parameter.
+    pub fn is_rest_param(&self) -> bool {
+        self.is_rest_param
+    }
 }
 
-impl fmt::Display for FormalParameter {
+impl Display for FormalParameter {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.is_rest_param {
             write!(f, "...")?;
@@ -1210,7 +984,7 @@ pub enum PropertyDefinition {
     ///
     /// [spec]: https://tc39.es/ecma262/#prod-IdentifierReference
     /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Object_initializer#Property_definitions
-    IdentifierReference(String),
+    IdentifierReference(Box<str>),
 
     /// Binds a property name to a JavaScript value.
     ///
@@ -1220,7 +994,7 @@ pub enum PropertyDefinition {
     ///
     /// [spec]: https://tc39.es/ecma262/#prod-PropertyDefinition
     /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Object_initializer#Property_definitions
-    Property(String, Node),
+    Property(Box<str>, Node),
 
     /// A property of an object can also refer to a function or a getter or setter method.
     ///
@@ -1230,7 +1004,7 @@ pub enum PropertyDefinition {
     ///
     /// [spec]: https://tc39.es/ecma262/#prod-MethodDefinition
     /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Object_initializer#Method_definitions
-    MethodDefinition(MethodDefinitionKind, String, Node),
+    MethodDefinition(MethodDefinitionKind, Box<str>, FunctionExpr),
 
     /// The Rest/Spread Properties for ECMAScript proposal (stage 4) adds spread properties to object literals.
     /// It copies own enumerable properties from a provided object onto a new object.
@@ -1250,7 +1024,7 @@ impl PropertyDefinition {
     /// Creates an `IdentifierReference` property definition.
     pub fn identifier_reference<I>(ident: I) -> Self
     where
-        I: Into<String>,
+        I: Into<Box<str>>,
     {
         Self::IdentifierReference(ident.into())
     }
@@ -1258,19 +1032,18 @@ impl PropertyDefinition {
     /// Creates a `Property` definition.
     pub fn property<N, V>(name: N, value: V) -> Self
     where
-        N: Into<String>,
+        N: Into<Box<str>>,
         V: Into<Node>,
     {
         Self::Property(name.into(), value.into())
     }
 
     /// Creates a `MethodDefinition`.
-    pub fn method_definition<N, B>(kind: MethodDefinitionKind, name: N, body: B) -> Self
+    pub fn method_definition<N>(kind: MethodDefinitionKind, name: N, body: FunctionExpr) -> Self
     where
-        N: Into<String>,
-        B: Into<Node>,
+        N: Into<Box<str>>,
     {
-        Self::MethodDefinition(kind, name.into(), body.into())
+        Self::MethodDefinition(kind, name.into(), body)
     }
 
     /// Creates a `SpreadObject`.

@@ -8,7 +8,7 @@ use self::catch::Catch;
 use self::finally::Finally;
 use super::block::Block;
 use crate::syntax::{
-    ast::{keyword::Keyword, node::Node, token::TokenKind},
+    ast::{Keyword, Node, TokenKind},
     parser::{AllowAwait, AllowReturn, AllowYield, Cursor, ParseError, ParseResult, TokenParser},
 };
 
@@ -58,7 +58,7 @@ impl TokenParser for TryStatement {
         if next_token.kind != TokenKind::Keyword(Keyword::Catch)
             && next_token.kind != TokenKind::Keyword(Keyword::Finally)
         {
-            return Err(ParseError::Expected(
+            return Err(ParseError::expected(
                 vec![
                     TokenKind::Keyword(Keyword::Catch),
                     TokenKind::Keyword(Keyword::Finally),
@@ -68,10 +68,10 @@ impl TokenParser for TryStatement {
             ));
         }
 
-        let (catch, param) = if next_token.kind == TokenKind::Keyword(Keyword::Catch) {
-            Catch::new(self.allow_yield, self.allow_await, self.allow_return).parse(cursor)?
+        let catch = if next_token.kind == TokenKind::Keyword(Keyword::Catch) {
+            Some(Catch::new(self.allow_yield, self.allow_await, self.allow_return).parse(cursor)?)
         } else {
-            (None, None)
+            None
         };
 
         let next_token = cursor.peek(0);
@@ -87,11 +87,6 @@ impl TokenParser for TryStatement {
             None => None,
         };
 
-        Ok(Node::try_node::<_, _, _, _, Node, Node, Node>(
-            try_clause,
-            catch,
-            param,
-            finally_block,
-        ))
+        Ok(Node::try_node(try_clause, catch, finally_block))
     }
 }

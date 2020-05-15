@@ -7,7 +7,7 @@
 
 use super::left_hand_side::LeftHandSideExpression;
 use crate::syntax::{
-    ast::{node::Node, op::UnaryOp, punc::Punctuator, token::TokenKind},
+    ast::{op::UnaryOp, Node, Punctuator, TokenKind},
     parser::{AllowAwait, AllowYield, Cursor, ParseError, ParseResult, TokenParser},
 };
 

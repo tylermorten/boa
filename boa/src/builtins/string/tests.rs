@@ -1,7 +1,5 @@
 use super::*;
-use crate::exec::Executor;
-use crate::realm::Realm;
-use crate::{forward, forward_val};
+use crate::{exec::Interpreter, forward, forward_val, realm::Realm};
 
 #[test]
 fn check_string_constructor_is_function() {
@@ -14,7 +12,7 @@ fn check_string_constructor_is_function() {
 // TODO: re-enable when getProperty() is finished;
 // fn length() {
 //     //TEST262: https://github.com/tc39/test262/blob/master/test/built-ins/String/length.js
-//     let mut engine = Executor::new();
+//     let mut engine = Interpreter::new();
 //     let init = r#"
 //     const a = new String(' ');
 //     const b = new String('\ud834\udf06');
@@ -39,7 +37,7 @@ fn check_string_constructor_is_function() {
 #[test]
 fn concat() {
     let realm = Realm::create();
-    let mut engine = Executor::new(realm);
+    let mut engine = Interpreter::new(realm);
     let init = r#"
         var hello = new String('Hello, ');
         var world = new String('world! ');
@@ -59,7 +57,7 @@ fn concat() {
 /// Test the correct type is returned from call and construct
 fn construct_and_call() {
     let realm = Realm::create();
-    let mut engine = Executor::new(realm);
+    let mut engine = Interpreter::new(realm);
     let init = r#"
         var hello = new String('Hello');
         var world = String('world');
@@ -75,7 +73,7 @@ fn construct_and_call() {
 #[test]
 fn repeat() {
     let realm = Realm::create();
-    let mut engine = Executor::new(realm);
+    let mut engine = Interpreter::new(realm);
     let init = r#"
         var empty = new String('');
         var en = new String('english');
@@ -103,7 +101,7 @@ fn repeat() {
 #[test]
 fn replace() {
     let realm = Realm::create();
-    let mut engine = Executor::new(realm);
+    let mut engine = Interpreter::new(realm);
     let init = r#"
         var a = "abc";
         a = a.replace("a", "2");
@@ -118,7 +116,7 @@ fn replace() {
 #[test]
 fn replace_with_function() {
     let realm = Realm::create();
-    let mut engine = Executor::new(realm);
+    let mut engine = Interpreter::new(realm);
     let init = r#"
         var a = "ecmascript is cool";
         var p1, p2, p3;
@@ -146,7 +144,7 @@ fn replace_with_function() {
 #[test]
 fn starts_with() {
     let realm = Realm::create();
-    let mut engine = Executor::new(realm);
+    let mut engine = Interpreter::new(realm);
     let init = r#"
         var empty = new String('');
         var en = new String('english');
@@ -170,7 +168,7 @@ fn starts_with() {
 #[test]
 fn ends_with() {
     let realm = Realm::create();
-    let mut engine = Executor::new(realm);
+    let mut engine = Interpreter::new(realm);
     let init = r#"
         var empty = new String('');
         var en = new String('english');
@@ -194,7 +192,7 @@ fn ends_with() {
 #[test]
 fn match_all() {
     let realm = Realm::create();
-    let mut engine = Executor::new(realm);
+    let mut engine = Interpreter::new(realm);
 
     assert_eq!(
         forward(&mut engine, "'aa'.matchAll(null).length"),
@@ -267,7 +265,7 @@ fn match_all() {
 #[test]
 fn test_match() {
     let realm = Realm::create();
-    let mut engine = Executor::new(realm);
+    let mut engine = Interpreter::new(realm);
     let init = r#"
         var str = new String('The Quick Brown Fox Jumps Over The Lazy Dog');
         var result1 = str.match(/quick\s(brown).+?(jumps)/i);

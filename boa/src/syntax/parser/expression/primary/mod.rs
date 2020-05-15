@@ -20,8 +20,10 @@ use self::{
 use super::Expression;
 use crate::syntax::{
     ast::{
-        constant::Const, keyword::Keyword, node::Node, punc::Punctuator, token::NumericLiteral,
-        token::TokenKind,
+        constant::Const,
+        node::{Identifier, Node},
+        token::NumericLiteral,
+        Keyword, Punctuator, TokenKind,
     },
     parser::{AllowAwait, AllowYield, Cursor, ParseError, ParseResult, TokenParser},
 };
@@ -64,7 +66,9 @@ impl TokenParser for PrimaryExpression {
         match &tok.kind {
             TokenKind::Keyword(Keyword::This) => Ok(Node::This),
             // TokenKind::Keyword(Keyword::Arguments) => Ok(Node::new(NodeBase::Arguments, tok.pos)),
-            TokenKind::Keyword(Keyword::Function) => FunctionExpression.parse(cursor),
+            TokenKind::Keyword(Keyword::Function) => {
+                FunctionExpression.parse(cursor).map(Node::from)
+            }
             TokenKind::Punctuator(Punctuator::OpenParen) => {
                 let expr =
                     Expression::new(true, self.allow_yield, self.allow_await).parse(cursor)?;
@@ -72,7 +76,9 @@ impl TokenParser for PrimaryExpression {
                 Ok(expr)
             }
             TokenKind::Punctuator(Punctuator::OpenBracket) => {
-                ArrayLiteral::new(self.allow_yield, self.allow_await).parse(cursor)
+                ArrayLiteral::new(self.allow_yield, self.allow_await)
+                    .parse(cursor)
+                    .map(Node::ArrayDecl)
             }
             TokenKind::Punctuator(Punctuator::OpenBlock) => {
                 ObjectLiteral::new(self.allow_yield, self.allow_await).parse(cursor)
@@ -81,18 +87,15 @@ impl TokenParser for PrimaryExpression {
             // TODO: ADD TokenKind::UndefinedLiteral
             TokenKind::Identifier(ref i) if i == "undefined" => Ok(Node::Const(Const::Undefined)),
             TokenKind::NullLiteral => Ok(Node::Const(Const::Null)),
-            TokenKind::Identifier(ident) => Ok(Node::local(ident)), // TODO: IdentifierReference
+            TokenKind::Identifier(ident) => Ok(Identifier::from(ident.as_str()).into()), // TODO: IdentifierReference
             TokenKind::StringLiteral(s) => Ok(Node::const_node(s)),
             TokenKind::NumericLiteral(NumericLiteral::Integer(num)) => Ok(Node::const_node(*num)),
             TokenKind::NumericLiteral(NumericLiteral::Rational(num)) => Ok(Node::const_node(*num)),
             TokenKind::RegularExpressionLiteral(body, flags) => Ok(Node::new(Node::call(
-                Node::local("RegExp"),
+                Node::from(Identifier::from("RegExp")),
                 vec![Node::const_node(body), Node::const_node(flags)],
             ))),
-            _ => Err(ParseError::Unexpected(
-                tok.clone(),
-                Some("primary expression"),
-            )),
+            _ => Err(ParseError::unexpected(tok.clone(), "primary expression")),
         }
     }
 }

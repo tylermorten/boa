@@ -8,7 +8,7 @@
 //! [spec]: https://tc39.es/ecma262/#sec-let-and-const-declarations
 
 use crate::syntax::{
-    ast::{keyword::Keyword, node::Node, punc::Punctuator, token::TokenKind},
+    ast::{Keyword, Node, Punctuator, TokenKind},
     parser::{
         expression::Initializer, statement::BindingIdentifier, AllowAwait, AllowIn, AllowYield,
         Cursor, ParseError, ParseResult, TokenParser,
@@ -116,7 +116,7 @@ impl TokenParser for BindingList {
                 if let (ident, Some(init)) = lexical_binding {
                     const_decls.push((ident, init));
                 } else {
-                    return Err(ParseError::Expected(
+                    return Err(ParseError::expected(
                         vec![TokenKind::Punctuator(Punctuator::Assign)],
                         cursor.next().ok_or(ParseError::AbruptEnd)?.clone(),
                         "const declaration",
@@ -132,7 +132,7 @@ impl TokenParser for BindingList {
                     let _ = cursor.next();
                 }
                 _ => {
-                    return Err(ParseError::Expected(
+                    return Err(ParseError::expected(
                         vec![
                             TokenKind::Punctuator(Punctuator::Semicolon),
                             TokenKind::LineTerminator,
@@ -181,9 +181,9 @@ impl LexicalBinding {
 }
 
 impl TokenParser for LexicalBinding {
-    type Output = (String, Option<Node>);
+    type Output = (Box<str>, Option<Node>);
 
-    fn parse(self, cursor: &mut Cursor<'_>) -> Result<(String, Option<Node>), ParseError> {
+    fn parse(self, cursor: &mut Cursor<'_>) -> Result<Self::Output, ParseError> {
         let ident = BindingIdentifier::new(self.allow_yield, self.allow_await).parse(cursor)?;
         let initializer =
             Initializer::new(self.allow_in, self.allow_yield, self.allow_await).try_parse(cursor);

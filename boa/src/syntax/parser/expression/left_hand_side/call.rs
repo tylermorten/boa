@@ -9,7 +9,7 @@
 
 use super::arguments::Arguments;
 use crate::syntax::{
-    ast::{node::Node, punc::Punctuator, token::TokenKind},
+    ast::{Node, Punctuator, TokenKind},
     parser::{
         expression::Expression, AllowAwait, AllowYield, Cursor, ParseError, ParseResult,
         TokenParser,
@@ -55,7 +55,7 @@ impl TokenParser for CallExpression {
             }
             _ => {
                 let next_token = cursor.next().ok_or(ParseError::AbruptEnd)?;
-                return Err(ParseError::Expected(
+                return Err(ParseError::expected(
                     vec![TokenKind::Punctuator(Punctuator::OpenParen)],
                     next_token.clone(),
                     "call expression",
@@ -73,13 +73,13 @@ impl TokenParser for CallExpression {
                     let _ = cursor.next().ok_or(ParseError::AbruptEnd)?; // We move the cursor.
                     match &cursor.next().ok_or(ParseError::AbruptEnd)?.kind {
                         TokenKind::Identifier(name) => {
-                            lhs = Node::get_const_field(lhs, name);
+                            lhs = Node::get_const_field(lhs, name.clone().into_boxed_str());
                         }
                         TokenKind::Keyword(kw) => {
                             lhs = Node::get_const_field(lhs, kw.to_string());
                         }
                         _ => {
-                            return Err(ParseError::Expected(
+                            return Err(ParseError::expected(
                                 vec![TokenKind::identifier("identifier")],
                                 tok.clone(),
                                 "call expression",

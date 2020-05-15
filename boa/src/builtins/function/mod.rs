@@ -19,9 +19,8 @@ use crate::{
         value::{ResultValue, Value},
     },
     environment::lexical_environment::{new_function_environment, Environment},
-    exec::Executor,
-    syntax::ast::node::{FormalParameter, Node},
-    Interpreter,
+    exec::{Executable, Interpreter},
+    syntax::ast::node::{FormalParameter, StatementList},
 };
 use gc::{unsafe_empty_trace, Finalize, Trace};
 use std::fmt::{self, Debug};
@@ -49,14 +48,14 @@ pub enum ThisMode {
 #[derive(Clone, Finalize)]
 pub enum FunctionBody {
     BuiltIn(NativeFunctionData),
-    Ordinary(Node),
+    Ordinary(StatementList),
 }
 
 impl Debug for FunctionBody {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::BuiltIn(_) => write!(f, "native code"),
-            Self::Ordinary(node) => write!(f, "{}", node),
+            Self::Ordinary(statements) => write!(f, "{:?}", statements),
         }
     }
 }
@@ -170,7 +169,7 @@ impl Function {
                 for i in 0..self.params.len() {
                     let param = self.params.get(i).expect("Could not get param");
                     // Rest Parameters
-                    if param.is_rest_param {
+                    if param.is_rest_param() {
                         self.add_rest_param(param, i, args_list, interpreter, &local_env);
                         break;
                     }
@@ -192,7 +191,7 @@ impl Function {
 
                 // Call body should be set before reaching here
                 let result = match &self.body {
-                    FunctionBody::Ordinary(ref body) => interpreter.run(body),
+                    FunctionBody::Ordinary(ref body) => body.run(interpreter),
                     _ => panic!("Ordinary function should not have BuiltIn Function body"),
                 };
 
@@ -229,7 +228,7 @@ impl Function {
                 // Add argument bindings to the function environment
                 for (i, param) in self.params.iter().enumerate() {
                     // Rest Parameters
-                    if param.is_rest_param {
+                    if param.is_rest_param() {
                         self.add_rest_param(param, i, args_list, interpreter, &local_env);
                         break;
                     }
@@ -251,7 +250,7 @@ impl Function {
 
                 // Call body should be set before reaching here
                 let result = match &self.body {
-                    FunctionBody::Ordinary(ref body) => interpreter.run(body),
+                    FunctionBody::Ordinary(ref body) => body.run(interpreter),
                     _ => panic!("Ordinary function should not have BuiltIn Function body"),
                 };
 
@@ -278,12 +277,12 @@ impl Function {
         // Create binding
         local_env
             .borrow_mut()
-            .create_mutable_binding(param.name.clone(), false);
+            .create_mutable_binding(param.name().to_owned(), false);
 
         // Set Binding to value
         local_env
             .borrow_mut()
-            .initialize_binding(&param.name, array);
+            .initialize_binding(param.name(), array);
     }
 
     // Adds an argument to the environment
@@ -296,12 +295,12 @@ impl Function {
         // Create binding
         local_env
             .borrow_mut()
-            .create_mutable_binding(param.name.clone(), false);
+            .create_mutable_binding(param.name().to_owned(), false);
 
         // Set Binding to value
         local_env
             .borrow_mut()
-            .initialize_binding(&param.name, value);
+            .initialize_binding(param.name(), value);
     }
 }
 

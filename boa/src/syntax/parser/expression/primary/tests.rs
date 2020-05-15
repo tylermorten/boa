@@ -1,4 +1,4 @@
-use crate::syntax::{ast::node::Node, parser::tests::check_parser};
+use crate::syntax::{ast::Node, parser::tests::check_parser};
 
 #[test]
 fn check_string() {

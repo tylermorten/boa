@@ -1,14 +1,17 @@
 // ! Tests for array initializer parsing.
 
 use crate::syntax::{
-    ast::{constant::Const, node::Node},
+    ast::{
+        constant::Const,
+        node::{ArrayDecl, Node},
+    },
     parser::tests::check_parser,
 };
 
 /// Checks an empty array.
 #[test]
 fn check_empty() {
-    check_parser("[]", vec![Node::array_decl(Vec::new())]);
+    check_parser("[]", vec![ArrayDecl::from(Vec::new()).into()]);
 }
 
 /// Checks an array with empty slot.
@@ -16,7 +19,7 @@ fn check_empty() {
 fn check_empty_slot() {
     check_parser(
         "[,]",
-        vec![Node::array_decl(vec![Node::Const(Const::Undefined)])],
+        vec![ArrayDecl::from(vec![Node::Const(Const::Undefined)]).into()],
     );
 }
 
@@ -25,11 +28,12 @@ fn check_empty_slot() {
 fn check_numeric_array() {
     check_parser(
         "[1, 2, 3]",
-        vec![Node::array_decl(vec![
+        vec![ArrayDecl::from(vec![
             Node::const_node(1),
             Node::const_node(2),
             Node::const_node(3),
-        ])],
+        ])
+        .into()],
     );
 }
 
@@ -38,11 +42,12 @@ fn check_numeric_array() {
 fn check_numeric_array_trailing() {
     check_parser(
         "[1, 2, 3,]",
-        vec![Node::array_decl(vec![
+        vec![ArrayDecl::from(vec![
             Node::const_node(1),
             Node::const_node(2),
             Node::const_node(3),
-        ])],
+        ])
+        .into()],
     );
 }
 
@@ -51,12 +56,13 @@ fn check_numeric_array_trailing() {
 fn check_numeric_array_elision() {
     check_parser(
         "[1, 2, , 3]",
-        vec![Node::array_decl(vec![
+        vec![ArrayDecl::from(vec![
             Node::const_node(1),
             Node::const_node(2),
             Node::Const(Const::Undefined),
             Node::const_node(3),
-        ])],
+        ])
+        .into()],
     );
 }
 
@@ -65,13 +71,14 @@ fn check_numeric_array_elision() {
 fn check_numeric_array_repeated_elision() {
     check_parser(
         "[1, 2, ,, 3]",
-        vec![Node::array_decl(vec![
+        vec![ArrayDecl::from(vec![
             Node::const_node(1),
             Node::const_node(2),
             Node::Const(Const::Undefined),
             Node::Const(Const::Undefined),
             Node::const_node(3),
-        ])],
+        ])
+        .into()],
     );
 }
 
@@ -80,11 +87,12 @@ fn check_numeric_array_repeated_elision() {
 fn check_combined() {
     check_parser(
         "[1, \"a\", 2]",
-        vec![Node::array_decl(vec![
+        vec![ArrayDecl::from(vec![
             Node::const_node(1),
             Node::const_node("a"),
             Node::const_node(2),
-        ])],
+        ])
+        .into()],
     );
 }
 
@@ -93,10 +101,11 @@ fn check_combined() {
 fn check_combined_empty_str() {
     check_parser(
         "[1, \"\", 2]",
-        vec![Node::array_decl(vec![
+        vec![ArrayDecl::from(vec![
             Node::const_node(1),
             Node::const_node(""),
             Node::const_node(2),
-        ])],
+        ])
+        .into()],
     );
 }

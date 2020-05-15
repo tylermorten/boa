@@ -1,5 +1,5 @@
 use super::*;
-use crate::{forward, Executor, Realm};
+use crate::{forward, Interpreter, Realm};
 
 #[test]
 fn check_is_object() {
@@ -52,7 +52,7 @@ fn check_number_is_true() {
 #[test]
 fn abstract_equality_comparison() {
     let realm = Realm::create();
-    let mut engine = Executor::new(realm);
+    let mut engine = Interpreter::new(realm);
 
     assert_eq!(forward(&mut engine, "undefined == undefined"), "true");
     assert_eq!(forward(&mut engine, "null == null"), "true");

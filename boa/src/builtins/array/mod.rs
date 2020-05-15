@@ -20,15 +20,17 @@ use crate::{
     },
     exec::Interpreter,
 };
-use std::borrow::Borrow;
-use std::cmp::{max, min};
-use std::ops::Deref;
+use std::{
+    borrow::Borrow,
+    cmp::{max, min},
+    ops::Deref,
+};
 
 /// Creates a new `Array` instance.
 pub(crate) fn new_array(interpreter: &Interpreter) -> ResultValue {
     let array = Value::new_object(Some(
         &interpreter
-            .get_realm()
+            .realm()
             .environment
             .get_global_object()
             .expect("Could not get global object"),
@@ -37,7 +39,7 @@ pub(crate) fn new_array(interpreter: &Interpreter) -> ResultValue {
     array.borrow().set_internal_slot(
         INSTANCE_PROTOTYPE,
         interpreter
-            .get_realm()
+            .realm()
             .environment
             .get_binding_value("Array")
             .borrow()
@@ -541,7 +543,7 @@ pub fn map(this: &mut Value, args: &[Value], interpreter: &mut Interpreter) -> R
 
     let length = i32::from(&this.get_field_slice("length"));
 
-    let new = new_array(&interpreter)?;
+    let new = new_array(interpreter)?;
 
     let values: Vec<Value> = (0..length)
         .map(|idx| {
@@ -879,7 +881,7 @@ pub fn filter(this: &mut Value, args: &[Value], interpreter: &mut Interpreter) -
 
     let length = i32::from(&this.get_field_slice("length"));
 
-    let new = new_array(&interpreter)?;
+    let new = new_array(interpreter)?;
 
     let values = (0..length)
         .filter_map(|idx| {

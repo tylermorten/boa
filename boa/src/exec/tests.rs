@@ -1,7 +1,4 @@
-use crate::exec;
-use crate::exec::Executor;
-use crate::forward;
-use crate::realm::Realm;
+use crate::{exec, exec::Interpreter, forward, realm::Realm};
 
 #[test]
 fn empty_let_decl_undefined() {
@@ -47,7 +44,7 @@ fn object_field_set() {
 #[test]
 fn spread_with_arguments() {
     let realm = Realm::create();
-    let mut engine = Executor::new(realm);
+    let mut engine = Interpreter::new(realm);
 
     let scenario = r#"
             const a = [1, "test", 3, 4];
@@ -74,7 +71,7 @@ fn spread_with_arguments() {
 #[test]
 fn array_rest_with_arguments() {
     let realm = Realm::create();
-    let mut engine = Executor::new(realm);
+    let mut engine = Interpreter::new(realm);
 
     let scenario = r#"
             var b = [4, 5, 6]
@@ -329,10 +326,7 @@ fn test_for_loop() {
 
         a
         "#;
-    assert_eq!(
-        exec(body_should_not_execute_on_false_condition),
-        String::from("0")
-    );
+    assert_eq!(&exec(body_should_not_execute_on_false_condition), "0");
 
     let inner_scope = r#"
         for (let i = 0;false;) {}
@@ -564,4 +558,98 @@ mod in_operator {
         "#;
         exec(scenario);
     }
+}
+
+#[test]
+fn var_decl_hoisting() {
+    let scenario = r#"
+        x = 5;
+        
+        var x;
+        x;
+    "#;
+    assert_eq!(&exec(scenario), "5");
+
+    let scenario = r#"
+        x = 5;
+
+        var x = 10;
+        x;
+    "#;
+    assert_eq!(&exec(scenario), "10");
+
+    let scenario = r#"
+        x = y;
+
+        var x = 10;
+        var y = 5;
+
+        x;
+    "#;
+    assert_eq!(&exec(scenario), "10");
+
+    let scenario = r#"
+        var x = y;
+
+        var y = 5;
+        x;
+    "#;
+    assert_eq!(&exec(scenario), "undefined");
+
+    let scenario = r#"
+        let y = x;
+        x = 5;
+
+        var x = 10;
+        y;
+    "#;
+    assert_eq!(&exec(scenario), "undefined");
+}
+
+#[test]
+fn function_decl_hoisting() {
+    let scenario = r#"
+        let a = hello();
+        function hello() { return 5 }
+
+        a;
+    "#;
+    assert_eq!(&exec(scenario), "5");
+
+    let scenario = r#"
+        x = hello();
+
+        function hello() {return 5}
+        var x;
+        x;
+    "#;
+    assert_eq!(&exec(scenario), "5");
+
+    let scenario = r#"
+        hello = function() { return 5 }
+        x = hello();
+
+        x;
+    "#;
+    assert_eq!(&exec(scenario), "5");
+
+    let scenario = r#"
+        let x = b();
+
+        function a() {return 5}
+        function b() {return a()}
+        
+        x;
+    "#;
+    assert_eq!(&exec(scenario), "5");
+
+    let scenario = r#"
+        let x = b();
+
+        function b() {return a()}
+        function a() {return 5}
+        
+        x;
+    "#;
+    assert_eq!(&exec(scenario), "5");
 }

@@ -1,6 +1,6 @@
 #![allow(clippy::float_cmp)]
 
-use crate::{builtins::value::Value, exec::Executor, forward, forward_val, realm::Realm};
+use crate::{builtins::value::Value, exec::Interpreter, forward, forward_val, realm::Realm};
 
 #[test]
 fn check_number_constructor_is_function() {
@@ -12,7 +12,7 @@ fn check_number_constructor_is_function() {
 #[test]
 fn call_number() {
     let realm = Realm::create();
-    let mut engine = Executor::new(realm);
+    let mut engine = Interpreter::new(realm);
     let init = r#"
         var default_zero = Number();
         var int_one = Number(1);
@@ -47,7 +47,7 @@ fn call_number() {
 #[test]
 fn to_exponential() {
     let realm = Realm::create();
-    let mut engine = Executor::new(realm);
+    let mut engine = Interpreter::new(realm);
     let init = r#"
         var default_exp = Number().toExponential();
         var int_exp = Number(5).toExponential();
@@ -76,7 +76,7 @@ fn to_exponential() {
 #[test]
 fn to_fixed() {
     let realm = Realm::create();
-    let mut engine = Executor::new(realm);
+    let mut engine = Interpreter::new(realm);
     let init = r#"
         var default_fixed = Number().toFixed();
         var pos_fixed = Number("3.456e+4").toFixed();
@@ -102,7 +102,7 @@ fn to_fixed() {
 #[test]
 fn to_locale_string() {
     let realm = Realm::create();
-    let mut engine = Executor::new(realm);
+    let mut engine = Interpreter::new(realm);
     let init = r#"
         var default_locale = Number().toLocaleString();
         var small_locale = Number(5).toLocaleString();
@@ -129,7 +129,7 @@ fn to_locale_string() {
 #[ignore]
 fn to_precision() {
     let realm = Realm::create();
-    let mut engine = Executor::new(realm);
+    let mut engine = Interpreter::new(realm);
     let init = r#"
         var default_precision = Number().toPrecision();
         var low_precision = Number(123456789).toPrecision(1);
@@ -161,7 +161,7 @@ fn to_precision() {
 #[test]
 fn to_string() {
     let realm = Realm::create();
-    let mut engine = Executor::new(realm);
+    let mut engine = Interpreter::new(realm);
 
     assert_eq!("NaN", &forward(&mut engine, "Number(NaN).toString()"));
     assert_eq!("Infinity", &forward(&mut engine, "Number(1/0).toString()"));
@@ -328,7 +328,7 @@ fn to_string() {
 // https://github.com/jasonwilliams/boa/pull/381#discussion_r422458544
 fn num_to_string_exponential() {
     let realm = Realm::create();
-    let mut engine = Executor::new(realm);
+    let mut engine = Interpreter::new(realm);
 
     assert_eq!(
         String::from("111111111111111110000"),
@@ -371,7 +371,7 @@ fn num_to_string_exponential() {
 #[test]
 fn value_of() {
     let realm = Realm::create();
-    let mut engine = Executor::new(realm);
+    let mut engine = Interpreter::new(realm);
     // TODO: In addition to parsing numbers from strings, parse them bare As of October 2019
     // the parser does not understand scientific e.g., Xe+Y or -Xe-Y notation.
     let init = r#"

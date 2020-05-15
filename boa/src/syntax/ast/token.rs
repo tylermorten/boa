@@ -5,7 +5,7 @@
 //!
 //! [spec]: https://tc39.es/ecma262/#sec-tokens
 
-use crate::syntax::ast::{keyword::Keyword, pos::Position, punc::Punctuator};
+use crate::syntax::ast::{Keyword, Punctuator, Span};
 use std::fmt::{Debug, Display, Formatter, Result};
 
 #[cfg(feature = "serde")]
@@ -21,38 +21,31 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq)]
 pub struct Token {
     /// The token kind, which contains the actual data of the token.
-    pub kind: TokenKind,
-
-    /// The token position from origina source code.
-    pub pos: Position,
+    pub(crate) kind: TokenKind,
+    /// The token position in the original source code.
+    span: Span,
 }
 
 impl Token {
     /// Create a new detailed token from the token data, line number and column number
-    pub fn new(kind: TokenKind, line_number: u64, column_number: u64) -> Self {
-        Self {
-            kind,
-            pos: Position::new(line_number, column_number),
-        }
+    pub fn new(kind: TokenKind, span: Span) -> Self {
+        Self { kind, span }
+    }
+
+    /// Gets the kind of the token.
+    pub fn kind(&self) -> &TokenKind {
+        &self.kind
+    }
+
+    /// Gets the token span in the original source code.
+    pub fn span(&self) -> Span {
+        self.span
     }
 }
 
 impl Display for Token {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{}", self.kind)
-    }
-}
-
-/// A continuous sequence of tokens.
-pub struct VecToken(Vec<Token>);
-
-impl Debug for VecToken {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        let mut buffer = String::new();
-        for token in &self.0 {
-            buffer.push_str(&token.to_string());
-        }
-        write!(f, "{}", buffer)
     }
 }
 
