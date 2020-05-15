@@ -11,8 +11,8 @@ pub use self::{
     array::ArrayDecl,
     block::Block,
     declaration::{
-        ArrowFunctionDecl, ConstDecl, ConstDeclList, FunctionDecl, FunctionExpr, VarDecl,
-        VarDeclList,
+        ArrowFunctionDecl, ConstDecl, ConstDeclList, FunctionDecl, FunctionExpr, LetDecl,
+        LetDeclList, VarDecl, VarDeclList,
     },
     identifier::Identifier,
     operator::{Assign, BinOp, UnaryOp},
@@ -244,7 +244,7 @@ pub enum Node {
     ///
     /// [spec]: https://tc39.es/ecma262/#sec-let-and-const-declarations
     /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/let
-    LetDecl(Box<[(Box<str>, Option<Node>)]>),
+    LetDeclList(LetDeclList),
 
     /// A local identifier node. [More information](./local/struct.Local.html).
     Identifier(Identifier),
@@ -548,14 +548,6 @@ impl Node {
         )
     }
 
-    /// Creates a `LetDecl` AST node.
-    pub fn let_decl<I>(init: I) -> Self
-    where
-        I: Into<Box<[(Box<str>, Option<Self>)]>>,
-    {
-        Self::LetDecl(init.into())
-    }
-
     /// Creates a `New` AST node.
     pub fn new<N>(node: N) -> Self
     where
@@ -792,16 +784,7 @@ impl Node {
             Self::Return(None) => write!(f, "return"),
             Self::Throw(ref ex) => write!(f, "throw {}", ex),
             Self::Assign(ref op) => Display::fmt(op, f),
-            Self::LetDecl(ref vars) => {
-                f.write_str("let ")?;
-                for (key, val) in vars.iter() {
-                    match val {
-                        Some(x) => write!(f, "{} = {}", key, x)?,
-                        None => write!(f, "{}", key)?,
-                    }
-                }
-                Ok(())
-            }
+            Self::LetDeclList(ref decl) => Display::fmt(decl, f),
             Self::ConstDeclList(ref decl) => Display::fmt(decl, f),
             Self::TypeOf(ref e) => write!(f, "typeof {}", e),
         }

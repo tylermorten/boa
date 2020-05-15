@@ -1,6 +1,9 @@
 use crate::syntax::{
     ast::{
-        node::{ConstDecl, ConstDeclList, FunctionDecl, Node, VarDecl, VarDeclList},
+        node::{
+            ConstDecl, ConstDeclList, FunctionDecl, LetDecl, LetDeclList, Node, VarDecl,
+            VarDeclList,
+        },
         Const,
     },
     parser::tests::{check_invalid, check_parser},
@@ -66,10 +69,7 @@ fn multiple_var_declaration() {
 fn let_declaration() {
     check_parser(
         "let a = 5;",
-        vec![Node::let_decl(vec![(
-            "a".into(),
-            Some(Const::from(5).into()),
-        )])],
+        vec![LetDeclList::from(vec![LetDecl::new("a", Node::from(Const::from(5)))]).into()],
     );
 }
 
@@ -78,18 +78,12 @@ fn let_declaration() {
 fn let_declaration_keywords() {
     check_parser(
         "let yield = 5;",
-        vec![Node::let_decl(vec![(
-            "yield".into(),
-            Some(Const::from(5).into()),
-        )])],
+        vec![LetDeclList::from(vec![LetDecl::new("yield", Node::from(Const::from(5)))]).into()],
     );
 
     check_parser(
         "let await = 5;",
-        vec![Node::let_decl(vec![(
-            "await".into(),
-            Some(Const::from(5).into()),
-        )])],
+        vec![LetDeclList::from(vec![LetDecl::new("await", Node::from(Const::from(5)))]).into()],
     );
 }
 
@@ -98,17 +92,17 @@ fn let_declaration_keywords() {
 fn let_declaration_no_spaces() {
     check_parser(
         "let a=5;",
-        vec![Node::let_decl(vec![(
-            "a".into(),
-            Some(Const::from(5).into()),
-        )])],
+        vec![LetDeclList::from(vec![LetDecl::new("a", Node::from(Const::from(5)))]).into()],
     );
 }
 
 /// Checks empty `let` declaration parsing.
 #[test]
 fn empty_let_declaration() {
-    check_parser("let a;", vec![Node::let_decl(vec![("a".into(), None)])]);
+    check_parser(
+        "let a;",
+        vec![LetDeclList::from(vec![LetDecl::new("a", None)]).into()],
+    );
 }
 
 /// Checks multiple `let` declarations.
@@ -116,11 +110,12 @@ fn empty_let_declaration() {
 fn multiple_let_declaration() {
     check_parser(
         "let a = 5, b, c = 6;",
-        vec![Node::let_decl(vec![
-            ("a".into(), Some(Const::from(5).into())),
-            ("b".into(), None),
-            ("c".into(), Some(Const::from(6).into())),
-        ])],
+        vec![LetDeclList::from(vec![
+            LetDecl::new("a", Node::from(Const::from(5))),
+            LetDecl::new("b", None),
+            LetDecl::new("c", Node::from(Const::from(6))),
+        ])
+        .into()],
     );
 }
 

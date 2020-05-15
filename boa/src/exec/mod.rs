@@ -18,7 +18,6 @@ use crate::{
         property::Property,
         value::{ResultValue, Value, ValueData},
     },
-    environment::lexical_environment::VariableScope,
     realm::Realm,
     syntax::ast::{
         node::{MethodDefinitionKind, Node, PropertyDefinition},
@@ -538,25 +537,7 @@ impl Executable for Node {
             Node::Throw(ref ex) => Err(interpreter.exec(ex)?),
             Node::Assign(ref op) => op.run(interpreter),
             Node::VarDeclList(ref decl) => decl.run(interpreter),
-            Node::LetDecl(ref vars) => {
-                for var in vars.iter() {
-                    let (name, value) = var.clone();
-                    let val = match value {
-                        Some(v) => interpreter.exec(&v)?,
-                        None => Value::undefined(),
-                    };
-                    interpreter.realm_mut().environment.create_mutable_binding(
-                        name.as_ref().to_owned(),
-                        false,
-                        VariableScope::Block,
-                    );
-                    interpreter
-                        .realm_mut()
-                        .environment
-                        .initialize_binding(&name, val);
-                }
-                Ok(Value::undefined())
-            }
+            Node::LetDeclList(ref decl) => decl.run(interpreter),
             Node::ConstDeclList(ref decl) => decl.run(interpreter),
             Node::TypeOf(ref val_e) => {
                 let val = interpreter.exec(val_e)?;

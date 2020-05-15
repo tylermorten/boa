@@ -9,7 +9,7 @@
 
 use crate::syntax::{
     ast::{
-        node::{ConstDecl, ConstDeclList, Node},
+        node::{ConstDecl, ConstDeclList, LetDecl, LetDeclList, Node},
         Keyword, Punctuator, TokenKind,
     },
     parser::{
@@ -111,12 +111,12 @@ impl TokenParser for BindingList {
         let mut const_decls = Vec::new();
 
         loop {
-            let lexical_binding =
+            let (ident, init) =
                 LexicalBinding::new(self.allow_in, self.allow_yield, self.allow_await)
                     .parse(cursor)?;
 
             if self.is_const {
-                if let (ident, Some(init)) = lexical_binding {
+                if let Some(init) = init {
                     const_decls.push(ConstDecl::new(ident, init));
                 } else {
                     return Err(ParseError::expected(
@@ -126,7 +126,7 @@ impl TokenParser for BindingList {
                     ));
                 }
             } else {
-                let_decls.push(lexical_binding);
+                let_decls.push(LetDecl::new(ident, init));
             }
 
             match cursor.peek_semicolon(false) {
@@ -150,7 +150,7 @@ impl TokenParser for BindingList {
         if self.is_const {
             Ok(ConstDeclList::from(const_decls).into())
         } else {
-            Ok(Node::let_decl(let_decls))
+            Ok(LetDeclList::from(let_decls).into())
         }
     }
 }

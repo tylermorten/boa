@@ -432,3 +432,110 @@ impl ConstDecl {
         &self.init
     }
 }
+
+/// The `const` statements are block-scoped, much like variables defined using the `let`
+/// keyword.
+///
+/// This declaration creates a constant whose scope can be either global or local to the block
+/// in which it is declared. Global constants do not become properties of the window object,
+/// unlike var variables.
+///
+/// An initializer for a constant is required. You must specify its value in the same statement
+/// in which it's declared. (This makes sense, given that it can't be changed later.)
+///
+/// More information:
+///  - [ECMAScript reference][spec]
+///  - [MDN documentation][mdn]
+///
+/// [spec]: https://tc39.es/ecma262/#sec-let-and-const-declarations
+/// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/const
+/// [identifier]: https://developer.mozilla.org/en-US/docs/Glossary/identifier
+/// [expression]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Expressions_and_Operators#Expressions
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Trace, Finalize, PartialEq)]
+pub struct LetDeclList {
+    #[cfg_attr(feature = "serde", serde(flatten))]
+    list: Box<[LetDecl]>,
+}
+
+impl<T> From<T> for LetDeclList
+where
+    T: Into<Box<[LetDecl]>>,
+{
+    fn from(list: T) -> Self {
+        Self { list: list.into() }
+    }
+}
+
+impl From<LetDecl> for LetDeclList {
+    fn from(decl: LetDecl) -> Self {
+        Self {
+            list: Box::new([decl]),
+        }
+    }
+}
+
+impl AsRef<[LetDecl]> for LetDeclList {
+    fn as_ref(&self) -> &[LetDecl] {
+        &self.list
+    }
+}
+
+impl fmt::Display for LetDeclList {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if !self.list.is_empty() {
+            write!(f, "let ")?;
+            join_nodes(f, &self.list)
+        } else {
+            Ok(())
+        }
+    }
+}
+
+impl From<LetDeclList> for Node {
+    fn from(list: LetDeclList) -> Self {
+        Self::LetDeclList(list)
+    }
+}
+
+/// Individual constant declaration.
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Trace, Finalize, PartialEq)]
+pub struct LetDecl {
+    name: Identifier,
+    init: Option<Node>,
+}
+
+impl fmt::Display for LetDecl {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(&self.name, f)?;
+        if let Some(ref init) = self.init {
+            write!(f, " = {}", init)?;
+        }
+        Ok(())
+    }
+}
+
+impl LetDecl {
+    /// Creates a new variable declaration.
+    pub(in crate::syntax) fn new<N, I>(name: N, init: I) -> Self
+    where
+        N: Into<Identifier>,
+        I: Into<Option<Node>>,
+    {
+        Self {
+            name: name.into(),
+            init: init.into(),
+        }
+    }
+
+    /// Gets the name of the variable.
+    pub fn name(&self) -> &str {
+        self.name.as_ref()
+    }
+
+    /// Gets the initialization node for the variable, if any.
+    pub fn init(&self) -> Option<&Node> {
+        self.init.as_ref()
+    }
+}

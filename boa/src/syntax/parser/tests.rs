@@ -46,7 +46,10 @@ fn check_construct_call_precedence() {
     check_parser(
         "new Date().getTime()",
         vec![Node::call(
-            Node::get_const_field(Node::call(Identifier::from("Date"), vec![]), "getTime"),
+            Node::get_const_field(
+                Node::new(Node::call(Identifier::from("Date"), vec![])),
+                "getTime",
+            ),
             vec![],
         )],
     );

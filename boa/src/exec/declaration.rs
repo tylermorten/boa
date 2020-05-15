@@ -8,7 +8,7 @@ use crate::{
         value::{ResultValue, Value},
     },
     environment::lexical_environment::VariableScope,
-    syntax::ast::node::{ConstDeclList, FunctionDecl, FunctionExpr, VarDeclList},
+    syntax::ast::node::{ConstDeclList, FunctionDecl, FunctionExpr, LetDeclList, VarDeclList},
 };
 
 impl Executable for FunctionDecl {
@@ -132,6 +132,27 @@ impl Executable for ConstDeclList {
                 .realm_mut()
                 .environment
                 .initialize_binding(decl.name(), val);
+        }
+        Ok(Value::undefined())
+    }
+}
+
+impl Executable for LetDeclList {
+    fn run(&self, interpreter: &mut Interpreter) -> ResultValue {
+        for var in self.as_ref() {
+            let val = match var.init() {
+                Some(v) => v.run(interpreter)?,
+                None => Value::undefined(),
+            };
+            interpreter.realm_mut().environment.create_mutable_binding(
+                var.name().to_owned(),
+                false,
+                VariableScope::Block,
+            );
+            interpreter
+                .realm_mut()
+                .environment
+                .initialize_binding(var.name(), val);
         }
         Ok(Value::undefined())
     }
