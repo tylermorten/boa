@@ -20,10 +20,9 @@ use self::{
 use super::Expression;
 use crate::syntax::{
     ast::{
-        constant::Const,
         node::{Identifier, Node},
         token::NumericLiteral,
-        Keyword, Punctuator, TokenKind,
+        Const, Keyword, Punctuator, TokenKind,
     },
     parser::{AllowAwait, AllowYield, Cursor, ParseError, ParseResult, TokenParser},
 };
@@ -83,17 +82,24 @@ impl TokenParser for PrimaryExpression {
             TokenKind::Punctuator(Punctuator::OpenBlock) => {
                 ObjectLiteral::new(self.allow_yield, self.allow_await).parse(cursor)
             }
-            TokenKind::BooleanLiteral(boolean) => Ok(Node::const_node(*boolean)),
+            TokenKind::BooleanLiteral(boolean) => Ok(Const::from(*boolean).into()),
             // TODO: ADD TokenKind::UndefinedLiteral
-            TokenKind::Identifier(ref i) if i == "undefined" => Ok(Node::Const(Const::Undefined)),
-            TokenKind::NullLiteral => Ok(Node::Const(Const::Null)),
-            TokenKind::Identifier(ident) => Ok(Identifier::from(ident.as_str()).into()), // TODO: IdentifierReference
-            TokenKind::StringLiteral(s) => Ok(Node::const_node(s)),
-            TokenKind::NumericLiteral(NumericLiteral::Integer(num)) => Ok(Node::const_node(*num)),
-            TokenKind::NumericLiteral(NumericLiteral::Rational(num)) => Ok(Node::const_node(*num)),
+            TokenKind::Identifier(ref i) if i.as_ref() == "undefined" => {
+                Ok(Const::Undefined.into())
+            }
+            TokenKind::NullLiteral => Ok(Const::Null.into()),
+            TokenKind::Identifier(ident) => Ok(Identifier::from(ident.as_ref()).into()), // TODO: IdentifierReference
+            TokenKind::StringLiteral(s) => Ok(Const::from(s.as_ref()).into()),
+            TokenKind::NumericLiteral(NumericLiteral::Integer(num)) => Ok(Const::from(*num).into()),
+            TokenKind::NumericLiteral(NumericLiteral::Rational(num)) => {
+                Ok(Const::from(*num).into())
+            }
             TokenKind::RegularExpressionLiteral(body, flags) => Ok(Node::new(Node::call(
                 Node::from(Identifier::from("RegExp")),
-                vec![Node::const_node(body), Node::const_node(flags)],
+                vec![
+                    Const::from(body.as_ref()).into(),
+                    Const::from(flags.to_string()).into(),
+                ],
             ))),
             _ => Err(ParseError::unexpected(tok.clone(), "primary expression")),
         }

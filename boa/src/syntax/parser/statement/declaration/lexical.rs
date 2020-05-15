@@ -8,7 +8,10 @@
 //! [spec]: https://tc39.es/ecma262/#sec-let-and-const-declarations
 
 use crate::syntax::{
-    ast::{Keyword, Node, Punctuator, TokenKind},
+    ast::{
+        node::{ConstDecl, ConstDeclList, Node},
+        Keyword, Punctuator, TokenKind,
+    },
     parser::{
         expression::Initializer, statement::BindingIdentifier, AllowAwait, AllowIn, AllowYield,
         Cursor, ParseError, ParseResult, TokenParser,
@@ -114,7 +117,7 @@ impl TokenParser for BindingList {
 
             if self.is_const {
                 if let (ident, Some(init)) = lexical_binding {
-                    const_decls.push((ident, init));
+                    const_decls.push(ConstDecl::new(ident, init));
                 } else {
                     return Err(ParseError::expected(
                         vec![TokenKind::Punctuator(Punctuator::Assign)],
@@ -145,7 +148,7 @@ impl TokenParser for BindingList {
         }
 
         if self.is_const {
-            Ok(Node::const_decl(const_decls))
+            Ok(ConstDeclList::from(const_decls).into())
         } else {
             Ok(Node::let_decl(let_decls))
         }

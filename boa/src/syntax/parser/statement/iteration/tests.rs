@@ -2,6 +2,7 @@ use crate::syntax::{
     ast::{
         node::{BinOp, Block, Identifier, Node, VarDecl, VarDeclList},
         op::{AssignOp, CompOp, UnaryOp},
+        Const,
     },
     parser::tests::check_parser,
 };
@@ -14,12 +15,12 @@ fn check_do_while() {
             a += 1;
         } while (true)"#,
         vec![Node::do_while_loop(
-            Node::from(Block::from(vec![Node::from(BinOp::new(
+            Block::from(vec![Node::from(BinOp::new(
                 AssignOp::Add,
                 Identifier::from("a"),
-                Node::const_node(1),
-            ))])),
-            Node::const_node(true),
+                Const::from(1),
+            ))]),
+            Const::from(true),
         )],
     );
 }
@@ -31,21 +32,21 @@ fn check_do_while_semicolon_insertion() {
         r#"var i = 0;
         do {console.log("hello");} while(i++ < 10) console.log("end");"#,
         vec![
-            VarDeclList::from(vec![VarDecl::new("i", Some(Node::const_node(0)))]).into(),
+            VarDeclList::from(vec![VarDecl::new("i", Some(Const::from(0).into()))]).into(),
             Node::do_while_loop(
-                Node::from(Block::from(vec![Node::call(
-                    Node::get_const_field(Node::from(Identifier::from("console")), "log"),
-                    vec![Node::const_node("hello")],
-                )])),
-                Node::from(BinOp::new(
+                Block::from(vec![Node::call(
+                    Node::get_const_field(Identifier::from("console"), "log"),
+                    vec![Const::from("hello").into()],
+                )]),
+                BinOp::new(
                     CompOp::LessThan,
-                    Node::unary_op(UnaryOp::IncrementPost, Node::from(Identifier::from("i"))),
-                    Node::const_node(10),
-                )),
+                    Node::unary_op(UnaryOp::IncrementPost, Identifier::from("i")),
+                    Const::from(10),
+                ),
             ),
             Node::call(
-                Node::get_const_field(Node::from(Identifier::from("console")), "log"),
-                vec![Node::const_node("end")],
+                Node::get_const_field(Identifier::from("console"), "log"),
+                vec![Const::from("end").into()],
             ),
         ],
     );

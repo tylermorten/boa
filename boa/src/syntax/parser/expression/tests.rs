@@ -1,6 +1,9 @@
 use crate::syntax::{
-    ast::node::{BinOp, Identifier, Node},
     ast::op::{AssignOp, BitOp, CompOp, NumOp},
+    ast::{
+        node::{BinOp, Identifier, Node},
+        Const,
+    },
     parser::tests::check_parser,
 };
 
@@ -20,7 +23,7 @@ fn check_numeric_operations() {
         vec![Node::from(BinOp::new(
             NumOp::Add,
             Identifier::from("a"),
-            Node::const_node(1),
+            Const::from(1),
         ))],
     );
     check_parser(
@@ -36,7 +39,7 @@ fn check_numeric_operations() {
         vec![Node::from(BinOp::new(
             NumOp::Sub,
             Identifier::from("a"),
-            Node::const_node(1),
+            Const::from(1),
         ))],
     );
     check_parser(
@@ -52,7 +55,7 @@ fn check_numeric_operations() {
         vec![Node::from(BinOp::new(
             NumOp::Div,
             Identifier::from("a"),
-            Node::const_node(2),
+            Const::from(2),
         ))],
     );
     check_parser(
@@ -68,7 +71,7 @@ fn check_numeric_operations() {
         vec![Node::from(BinOp::new(
             NumOp::Mul,
             Identifier::from("a"),
-            Node::const_node(2),
+            Const::from(2),
         ))],
     );
     check_parser(
@@ -84,7 +87,7 @@ fn check_numeric_operations() {
         vec![Node::from(BinOp::new(
             NumOp::Exp,
             Identifier::from("a"),
-            Node::const_node(2),
+            Const::from(2),
         ))],
     );
     check_parser(
@@ -100,7 +103,7 @@ fn check_numeric_operations() {
         vec![Node::from(BinOp::new(
             NumOp::Mod,
             Identifier::from("a"),
-            Node::const_node(2),
+            Const::from(2),
         ))],
     );
 }
@@ -121,11 +124,11 @@ fn check_complex_numeric_operations() {
                     Node::from(BinOp::new(
                         NumOp::Sub,
                         Identifier::from("b"),
-                        Node::const_node(3),
+                        Const::from(3),
                     )),
                 )),
             )),
-            Node::const_node(1),
+            Const::from(1),
         ))],
     );
 }
@@ -315,11 +318,7 @@ fn check_assign_operations() {
         vec![Node::from(BinOp::new(
             AssignOp::Mod,
             Identifier::from("a"),
-            Node::from(BinOp::new(
-                NumOp::Div,
-                Node::const_node(10),
-                Node::const_node(2),
-            )),
+            Node::from(BinOp::new(NumOp::Div, Const::from(10), Const::from(2))),
         ))],
     );
 }

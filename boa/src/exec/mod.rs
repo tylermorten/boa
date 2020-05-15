@@ -21,9 +21,9 @@ use crate::{
     environment::lexical_environment::VariableScope,
     realm::Realm,
     syntax::ast::{
-        constant::Const,
         node::{MethodDefinitionKind, Node, PropertyDefinition},
         op::UnaryOp,
+        Const,
     },
 };
 use std::{borrow::Borrow, ops::Deref};
@@ -613,24 +613,7 @@ impl Executable for Node {
                 }
                 Ok(Value::undefined())
             }
-            Node::ConstDecl(ref vars) => {
-                for (name, value) in vars.iter() {
-                    interpreter
-                        .realm_mut()
-                        .environment
-                        .create_immutable_binding(
-                            name.as_ref().to_owned(),
-                            false,
-                            VariableScope::Block,
-                        );
-                    let val = interpreter.exec(&value)?;
-                    interpreter
-                        .realm_mut()
-                        .environment
-                        .initialize_binding(&name, val);
-                }
-                Ok(Value::undefined())
-            }
+            Node::ConstDeclList(ref decl) => decl.run(interpreter),
             Node::TypeOf(ref val_e) => {
                 let val = interpreter.exec(val_e)?;
                 Ok(Value::from(match *val {

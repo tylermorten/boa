@@ -423,10 +423,7 @@ fn hexadecimal_edge_case() {
     lexer.lex().expect("failed to lex");
     assert_eq!(lexer.tokens[0].kind, TokenKind::numeric_literal(0xffff));
     assert_eq!(lexer.tokens[1].kind, TokenKind::Punctuator(Punctuator::Dot));
-    assert_eq!(
-        lexer.tokens[2].kind,
-        TokenKind::Identifier(String::from("ff"))
-    );
+    assert_eq!(lexer.tokens[2].kind, TokenKind::identifier("ff"));
 
     assert_eq!(
         lexer.tokens[3].kind,
@@ -454,7 +451,7 @@ fn regex_literal() {
     lexer.lex().expect("failed to lex");
     assert_eq!(
         lexer.tokens[0].kind,
-        TokenKind::regular_expression_literal("(?:)", "")
+        TokenKind::regular_expression_literal("(?:)", "".parse().unwrap())
     );
 }
 
@@ -464,7 +461,7 @@ fn regex_literal_flags() {
     lexer.lex().expect("failed to lex");
     assert_eq!(
         lexer.tokens[0].kind,
-        TokenKind::regular_expression_literal("\\/[^\\/]*\\/*", "gmi")
+        TokenKind::regular_expression_literal("\\/[^\\/]*\\/*", "gmi".parse().unwrap())
     );
 }
 

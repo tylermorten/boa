@@ -10,7 +10,7 @@
 use crate::syntax::{
     ast::{
         node::{Block, Node},
-        Keyword, Punctuator, TokenKind,
+        Const, Keyword, Punctuator, TokenKind,
     },
     parser::{
         expression::Expression,
@@ -78,7 +78,7 @@ impl TokenParser for ForStatement {
         cursor.expect(Punctuator::Semicolon, "for statement")?;
 
         let cond = if cursor.next_if(Punctuator::Semicolon).is_some() {
-            Node::const_node(true)
+            Const::from(true).into()
         } else {
             let step = Expression::new(true, self.allow_yield, self.allow_await).parse(cursor)?;
             cursor.expect(Punctuator::Semicolon, "for statement")?;

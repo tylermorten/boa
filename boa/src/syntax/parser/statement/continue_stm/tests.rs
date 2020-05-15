@@ -1,5 +1,8 @@
 use crate::syntax::{
-    ast::node::{Block, Node},
+    ast::{
+        node::{Block, Node},
+        Const,
+    },
     parser::tests::check_parser,
 };
 
@@ -7,10 +10,7 @@ use crate::syntax::{
 fn inline() {
     check_parser(
         "while (true) continue;",
-        vec![Node::while_loop(
-            Node::const_node(true),
-            Node::Continue(None),
-        )],
+        vec![Node::while_loop(Const::from(true), Node::Continue(None))],
     );
 }
 
@@ -19,10 +19,7 @@ fn new_line() {
     check_parser(
         "while (true)
             continue;",
-        vec![Node::while_loop(
-            Node::const_node(true),
-            Node::Continue(None),
-        )],
+        vec![Node::while_loop(Const::from(true), Node::Continue(None))],
     );
 }
 
@@ -31,7 +28,7 @@ fn inline_block_semicolon_insertion() {
     check_parser(
         "while (true) {continue}",
         vec![Node::while_loop(
-            Node::const_node(true),
+            Const::from(true),
             Node::from(Block::from(vec![Node::Continue(None)])),
         )],
     );
@@ -44,7 +41,7 @@ fn new_line_semicolon_insertion() {
             continue test
         }",
         vec![Node::while_loop(
-            Node::const_node(true),
+            Const::from(true),
             Node::from(Block::from(vec![Node::continue_node("test")])),
         )],
     );
@@ -55,7 +52,7 @@ fn inline_block() {
     check_parser(
         "while (true) {continue;}",
         vec![Node::while_loop(
-            Node::const_node(true),
+            Const::from(true),
             Node::from(Block::from(vec![Node::Continue(None)])),
         )],
     );
@@ -68,7 +65,7 @@ fn new_line_block() {
             continue test;
         }",
         vec![Node::while_loop(
-            Node::const_node(true),
+            Const::from(true),
             Node::from(Block::from(vec![Node::continue_node("test")])),
         )],
     );
@@ -81,7 +78,7 @@ fn reserved_label() {
             continue await;
         }",
         vec![Node::while_loop(
-            Node::const_node(true),
+            Const::from(true),
             Node::from(Block::from(vec![Node::continue_node("await")])),
         )],
     );
@@ -91,7 +88,7 @@ fn reserved_label() {
             continue yield;
         }",
         vec![Node::while_loop(
-            Node::const_node(true),
+            Const::from(true),
             Node::from(Block::from(vec![Node::continue_node("yield")])),
         )],
     );
@@ -104,7 +101,7 @@ fn new_line_block_empty() {
             continue;
         }",
         vec![Node::while_loop(
-            Node::const_node(true),
+            Const::from(true),
             Node::from(Block::from(vec![Node::Continue(None)])),
         )],
     );
@@ -117,7 +114,7 @@ fn new_line_block_empty_semicolon_insertion() {
             continue
         }",
         vec![Node::while_loop(
-            Node::const_node(true),
+            Const::from(true),
             Node::from(Block::from(vec![Node::Continue(None)])),
         )],
     );

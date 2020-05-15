@@ -62,7 +62,7 @@ impl TokenParser for MemberExpression {
                     let _ = cursor.next().ok_or(ParseError::AbruptEnd)?; // We move the cursor forward.
                     match &cursor.next().ok_or(ParseError::AbruptEnd)?.kind {
                         TokenKind::Identifier(name) => {
-                            lhs = Node::get_const_field(lhs, name.clone().into_boxed_str())
+                            lhs = Node::get_const_field(lhs, name.clone())
                         }
                         TokenKind::Keyword(kw) => lhs = Node::get_const_field(lhs, kw.to_string()),
                         _ => {

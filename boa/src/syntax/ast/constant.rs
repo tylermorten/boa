@@ -113,6 +113,12 @@ impl From<&String> for Const {
     }
 }
 
+impl From<Box<str>> for Const {
+    fn from(s: Box<str>) -> Self {
+        Self::String(s)
+    }
+}
+
 impl From<String> for Const {
     fn from(s: String) -> Self {
         Self::String(s.into_boxed_str())

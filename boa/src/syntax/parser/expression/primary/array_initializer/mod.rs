@@ -12,7 +12,7 @@ mod tests;
 
 use crate::syntax::{
     ast::{
-        constant::Const,
+        Const,
         node::{ArrayDecl, Node},
         Punctuator,
     },

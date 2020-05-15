@@ -2,10 +2,13 @@
 
 use super::Parser;
 use crate::syntax::{
-    ast::node::{
-        Assign, BinOp, FunctionDecl, Identifier, Node, StatementList, VarDecl, VarDeclList,
+    ast::{
+        node::{
+            Assign, BinOp, FunctionDecl, Identifier, Node, StatementList, VarDecl, VarDeclList,
+        },
+        op::{NumOp, UnaryOp},
+        Const,
     },
-    ast::op::{NumOp, UnaryOp},
     lexer::Lexer,
 };
 
@@ -57,7 +60,7 @@ fn assign_operator_precedence() {
         "a = a + 1",
         vec![Assign::new(
             Identifier::from("a"),
-            BinOp::new(NumOp::Add, Identifier::from("a"), Node::const_node(1)),
+            BinOp::new(NumOp::Add, Identifier::from("a"), Const::from(1)),
         )
         .into()],
     );
@@ -75,7 +78,7 @@ fn hoisting() {
             FunctionDecl::new(
                 Box::from("hello"),
                 vec![],
-                vec![Node::return_node(Node::const_node(10))],
+                vec![Node::return_node(Const::from(10))],
             )
             .into(),
             VarDeclList::from(vec![VarDecl::new(
@@ -94,7 +97,7 @@ fn hoisting() {
 
             var a;",
         vec![
-            Node::from(Assign::new(Identifier::from("a"), Node::const_node(10))),
+            Node::from(Assign::new(Identifier::from("a"), Const::from(10))),
             Node::unary_op(UnaryOp::IncrementPost, Node::from(Identifier::from("a"))),
             VarDeclList::from(vec![VarDecl::new("a", None)]).into(),
         ],

@@ -10,14 +10,17 @@ pub mod statement_list;
 pub use self::{
     array::ArrayDecl,
     block::Block,
-    declaration::{ArrowFunctionDecl, FunctionDecl, FunctionExpr, VarDecl, VarDeclList},
+    declaration::{
+        ArrowFunctionDecl, ConstDecl, ConstDeclList, FunctionDecl, FunctionExpr, VarDecl,
+        VarDeclList,
+    },
     identifier::Identifier,
     operator::{Assign, BinOp},
     statement_list::StatementList,
 };
-use crate::syntax::ast::{
-    constant::Const,
+use super::{
     op::{Operator, UnaryOp},
+    Const,
 };
 use gc::{Finalize, Trace};
 use std::{
@@ -106,25 +109,8 @@ pub enum Node {
     /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Grammar_and_types#Literals
     Const(Const),
 
-    /// The `const` statements are block-scoped, much like variables defined using the `let`
-    /// keyword.
-    ///
-    /// This declaration creates a constant whose scope can be either global or local to the block
-    /// in which it is declared. Global constants do not become properties of the window object,
-    /// unlike var variables.
-    ///
-    /// An initializer for a constant is required. You must specify its value in the same statement
-    /// in which it's declared. (This makes sense, given that it can't be changed later.)
-    ///
-    /// More information:
-    ///  - [ECMAScript reference][spec]
-    ///  - [MDN documentation][mdn]
-    ///
-    /// [spec]: https://tc39.es/ecma262/#sec-let-and-const-declarations
-    /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/const
-    /// [identifier]: https://developer.mozilla.org/en-US/docs/Glossary/identifier
-    /// [expression]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Expressions_and_Operators#Expressions
-    ConstDecl(Box<[(Box<str>, Node)]>),
+    /// A constant declaration list. [More information](./declaration/struct.ConstDeclList.html).
+    ConstDeclList(ConstDeclList),
 
     /// The `continue` statement terminates execution of the statements in the current iteration of
     /// the current or labeled loop, and continues execution of the loop with the next iteration.
@@ -481,9 +467,9 @@ impl Display for Node {
     }
 }
 
-impl AsRef<Node> for Node {
-    fn as_ref(&self) -> &Self {
-        &self
+impl From<Const> for Node {
+    fn from(c: Const) -> Self {
+        Self::Const(c)
     }
 }
 
@@ -511,36 +497,24 @@ impl Node {
     /// Creates a `Call` AST node.
     pub fn call<F, P>(function: F, params: P) -> Self
     where
-        F: Into<Box<Self>>,
+        F: Into<Self>,
         P: Into<Box<[Self]>>,
     {
-        Self::Call(function.into(), params.into())
+        Self::Call(Box::new(function.into()), params.into())
     }
 
     /// Creates a `ConditionalOp` AST node.
     pub fn conditional_op<C, T, F>(condition: C, if_true: T, if_false: F) -> Self
     where
-        C: Into<Box<Self>>,
-        T: Into<Box<Self>>,
-        F: Into<Box<Self>>,
+        C: Into<Self>,
+        T: Into<Self>,
+        F: Into<Self>,
     {
-        Self::ConditionalOp(condition.into(), if_true.into(), if_false.into())
-    }
-
-    /// Creates a `Const` AST node.
-    pub fn const_node<C>(node: C) -> Self
-    where
-        C: Into<Const>,
-    {
-        Self::Const(node.into())
-    }
-
-    /// Creates a `ConstDecl` AST node.
-    pub fn const_decl<D>(decl: D) -> Self
-    where
-        D: Into<Box<[(Box<str>, Self)]>>,
-    {
-        Self::ConstDecl(decl.into())
+        Self::ConditionalOp(
+            Box::new(condition.into()),
+            Box::new(if_true.into()),
+            Box::new(if_false.into()),
+        )
     }
 
     /// Creates a `Continue` AST node.
@@ -555,28 +529,28 @@ impl Node {
     /// Creates a `DoWhileLoop` AST node.
     pub fn do_while_loop<B, C>(body: B, condition: C) -> Self
     where
-        B: Into<Box<Self>>,
-        C: Into<Box<Self>>,
+        B: Into<Self>,
+        C: Into<Self>,
     {
-        Self::DoWhileLoop(body.into(), condition.into())
+        Self::DoWhileLoop(Box::new(body.into()), Box::new(condition.into()))
     }
 
     /// Creates a `GetConstField` AST node.
     pub fn get_const_field<V, L>(value: V, label: L) -> Self
     where
-        V: Into<Box<Self>>,
+        V: Into<Self>,
         L: Into<Box<str>>,
     {
-        Self::GetConstField(value.into(), label.into())
+        Self::GetConstField(Box::new(value.into()), label.into())
     }
 
     /// Creates a `GetField` AST node.
     pub fn get_field<V, F>(value: V, field: F) -> Self
     where
-        V: Into<Box<Self>>,
-        F: Into<Box<Self>>,
+        V: Into<Self>,
+        F: Into<Self>,
     {
-        Self::GetField(value.into(), field.into())
+        Self::GetField(Box::new(value.into()), Box::new(field.into()))
     }
 
     /// Creates a `ForLoop` AST node.
@@ -585,28 +559,32 @@ impl Node {
         OI: Into<Option<I>>,
         OC: Into<Option<C>>,
         OS: Into<Option<S>>,
-        I: Into<Box<Self>>,
-        C: Into<Box<Self>>,
-        S: Into<Box<Self>>,
-        B: Into<Box<Self>>,
+        I: Into<Self>,
+        C: Into<Self>,
+        S: Into<Self>,
+        B: Into<Self>,
     {
         Self::ForLoop(
-            init.into().map(I::into),
-            condition.into().map(C::into),
-            step.into().map(S::into),
-            body.into(),
+            init.into().map(I::into).map(Box::new),
+            condition.into().map(C::into).map(Box::new),
+            step.into().map(S::into).map(Box::new),
+            Box::new(body.into()),
         )
     }
 
     /// Creates an `If` AST node.
     pub fn if_node<C, B, E, OE>(condition: C, body: B, else_node: OE) -> Self
     where
-        C: Into<Box<Self>>,
-        B: Into<Box<Self>>,
-        E: Into<Box<Self>>,
+        C: Into<Self>,
+        B: Into<Self>,
+        E: Into<Self>,
         OE: Into<Option<E>>,
     {
-        Self::If(condition.into(), body.into(), else_node.into().map(E::into))
+        Self::If(
+            Box::new(condition.into()),
+            Box::new(body.into()),
+            else_node.into().map(E::into).map(Box::new),
+        )
     }
 
     /// Creates a `LetDecl` AST node.
@@ -620,9 +598,9 @@ impl Node {
     /// Creates a `New` AST node.
     pub fn new<N>(node: N) -> Self
     where
-        N: Into<Box<Self>>,
+        N: Into<Self>,
     {
-        Self::New(node.into())
+        Self::New(Box::new(node.into()))
     }
 
     /// Creates an `Object` AST node.
@@ -636,45 +614,49 @@ impl Node {
     /// Creates a `Return` AST node.
     pub fn return_node<E, OE>(expr: OE) -> Self
     where
-        E: Into<Box<Self>>,
+        E: Into<Self>,
         OE: Into<Option<E>>,
     {
-        Self::Return(expr.into().map(E::into))
+        Self::Return(expr.into().map(E::into).map(Box::new))
     }
 
     /// Creates a `Switch` AST node.
     pub fn switch<V, C, OD, D>(val: V, cases: C, default: OD) -> Self
     where
-        V: Into<Box<Self>>,
+        V: Into<Self>,
         C: Into<Box<[(Self, Box<[Self]>)]>>,
         OD: Into<Option<D>>,
-        D: Into<Box<Self>>,
+        D: Into<Self>,
     {
-        Self::Switch(val.into(), cases.into(), default.into().map(D::into))
+        Self::Switch(
+            Box::new(val.into()),
+            cases.into(),
+            default.into().map(D::into).map(Box::new),
+        )
     }
 
     /// Creates a `Spread` AST node.
     pub fn spread<V>(val: V) -> Self
     where
-        V: Into<Box<Self>>,
+        V: Into<Self>,
     {
-        Self::Spread(val.into())
+        Self::Spread(Box::new(val.into()))
     }
 
     /// Creates a `Throw` AST node.
     pub fn throw<V>(val: V) -> Self
     where
-        V: Into<Box<Self>>,
+        V: Into<Self>,
     {
-        Self::Throw(val.into())
+        Self::Throw(Box::new(val.into()))
     }
 
     /// Creates a `TypeOf` AST node.
     pub fn type_of<E>(expr: E) -> Self
     where
-        E: Into<Box<Self>>,
+        E: Into<Self>,
     {
-        Self::TypeOf(expr.into())
+        Self::TypeOf(Box::new(expr.into()))
     }
 
     /// Creates a `Try` AST node.
@@ -702,18 +684,18 @@ impl Node {
     /// Creates a `UnaryOp` AST node.
     pub fn unary_op<V>(op: UnaryOp, val: V) -> Self
     where
-        V: Into<Box<Self>>,
+        V: Into<Self>,
     {
-        Self::UnaryOp(op, val.into())
+        Self::UnaryOp(op, Box::new(val.into()))
     }
 
     /// Creates a `WhileLoop` AST node.
     pub fn while_loop<C, B>(condition: C, body: B) -> Self
     where
-        C: Into<Box<Self>>,
-        B: Into<Box<Self>>,
+        C: Into<Self>,
+        B: Into<Self>,
     {
-        Self::WhileLoop(condition.into(), body.into())
+        Self::WhileLoop(Box::new(condition.into()), Box::new(body.into()))
     }
 
     // /// Gets the lexically declared names.
@@ -867,13 +849,7 @@ impl Node {
                 }
                 Ok(())
             }
-            Self::ConstDecl(ref vars) => {
-                f.write_str("const ")?;
-                for (key, val) in vars.iter() {
-                    write!(f, "{} = {}", key, val)?
-                }
-                Ok(())
-            }
+            Self::ConstDeclList(ref decl) => Display::fmt(decl, f),
             Self::TypeOf(ref e) => write!(f, "typeof {}", e),
         }
     }

@@ -86,9 +86,12 @@ impl LexerError {
     /// Create a new LexerError struct
     ///
     /// * `msg` - The message to show when LexerError is displayed
-    fn new(msg: &str) -> Self {
+    pub(crate) fn new<M>(msg: M) -> Self
+    where
+        M: Into<String>,
+    {
         Self {
-            details: msg.to_string(),
+            details: msg.into(),
         }
     }
 }
@@ -613,7 +616,7 @@ impl<'a> Lexer<'a> {
                     // So technically it would be +2, (for both " ") but we want to be 1 less
                     // to compensate for the incrementing at the top
                     self.move_columns( str_length.wrapping_add(1));
-                    self.push_token(TokenKind::StringLiteral(buf), start_pos);
+                    self.push_token(TokenKind::string_literal(buf), start_pos);
                 }
                 _ if ch.is_digit(10) => self.reed_numerical_literal(ch)?,
                 _ if ch.is_alphabetic() || ch == '$' || ch == '_' => {
@@ -749,8 +752,9 @@ impl<'a> Lexer<'a> {
                                 if regex {
                                     // body was parsed, now look for flags
                                     let flags = self.take_char_while(char::is_alphabetic)?;
-                                    self.push_token(TokenKind::RegularExpressionLiteral(
-                                        body, flags,
+                                    self.move_columns(body.len() as u32 + 1 + flags.len() as u32);
+                                    self.push_token(TokenKind::regular_expression_literal(
+                                        body, flags.parse()?,
                                     ), start_pos);
                                 } else {
                                     // failed to parse regex, restore original buffer position and

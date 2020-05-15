@@ -1,5 +1,8 @@
 use crate::syntax::{
-    ast::node::{Block, Identifier, Node, VarDecl, VarDeclList},
+    ast::{
+        node::{Block, Identifier, Node, VarDecl, VarDeclList},
+        Const,
+    },
     parser::tests::{check_invalid, check_parser},
 };
 
@@ -22,7 +25,7 @@ fn check_inline_with_var_decl_inside_try() {
         vec![Node::try_node(
             Block::from(vec![VarDeclList::from(vec![VarDecl::new(
                 "x",
-                Some(Node::const_node(1)),
+                Some(Const::from(1).into()),
             )])
             .into()]),
             Some((Some(Identifier::from("e")), Block::from(vec![]))),
@@ -38,14 +41,14 @@ fn check_inline_with_var_decl_inside_catch() {
         vec![Node::try_node(
             Block::from(vec![VarDeclList::from(vec![VarDecl::new(
                 "x",
-                Some(Node::const_node(1)),
+                Some(Const::from(1).into()),
             )])
             .into()]),
             Some((
                 Some(Identifier::from("e")),
                 Block::from(vec![VarDeclList::from(vec![VarDecl::new(
                     "x",
-                    Some(Node::const_node(1)),
+                    Some(Const::from(1).into()),
                 )])
                 .into()]),
             )),
@@ -87,7 +90,7 @@ fn check_inline_with_empty_try_var_decl_in_finally() {
             None,
             Block::from(vec![VarDeclList::from(vec![VarDecl::new(
                 "x",
-                Some(Node::const_node(1)),
+                Some(Const::from(1).into()),
             )])
             .into()]),
         )],
@@ -104,7 +107,7 @@ fn check_inline_empty_try_paramless_catch() {
                 None,
                 Block::from(vec![VarDeclList::from(vec![VarDecl::new(
                     "x",
-                    Some(Node::const_node(1)),
+                    Some(Const::from(1).into()),
                 )])
                 .into()]),
             )),

@@ -4,6 +4,7 @@ use crate::syntax::{
     ast::{
         node::{Assign, Block, FunctionDecl, Identifier, Node, VarDecl, VarDeclList},
         op::UnaryOp,
+        Const,
     },
     parser::tests::check_parser,
 };
@@ -27,7 +28,7 @@ fn non_empty() {
             a++;
         }",
         Block::from(vec![
-            VarDeclList::from(vec![VarDecl::new("a", Some(Node::const_node(10)))]).into(),
+            VarDeclList::from(vec![VarDecl::new("a", Some(Const::from(10).into()))]).into(),
             Node::unary_op(UnaryOp::IncrementPost, Node::from(Identifier::from("a"))),
         ]),
     );
@@ -45,7 +46,7 @@ fn non_empty() {
             FunctionDecl::new(
                 "hello".to_owned().into_boxed_str(),
                 vec![],
-                vec![Node::return_node(Node::const_node(10))],
+                vec![Node::return_node(Node::from(Const::from(10)))],
             )
             .into(),
             VarDeclList::from(vec![VarDecl::new(
@@ -71,7 +72,7 @@ fn hoisting() {
             FunctionDecl::new(
                 "hello".to_owned().into_boxed_str(),
                 vec![],
-                vec![Node::return_node(Node::const_node(10))],
+                vec![Node::return_node(Node::from(Const::from(10)))],
             )
             .into(),
             VarDeclList::from(vec![VarDecl::new(
@@ -91,7 +92,7 @@ fn hoisting() {
             var a;
         }",
         Block::from(vec![
-            Assign::new(Identifier::from("a"), Node::const_node(10)).into(),
+            Assign::new(Identifier::from("a"), Const::from(10)).into(),
             Node::unary_op(UnaryOp::IncrementPost, Node::from(Identifier::from("a"))),
             VarDeclList::from(vec![VarDecl::new("a", None)]).into(),
         ]),

@@ -9,6 +9,7 @@ pub mod punctuator;
 pub mod token;
 
 pub use self::{
+    constant::Const,
     keyword::Keyword,
     node::Node,
     position::{Position, Span},
