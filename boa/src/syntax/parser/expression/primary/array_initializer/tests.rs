@@ -8,7 +8,7 @@ use crate::syntax::{
 /// Checks an empty array.
 #[test]
 fn check_empty() {
-    check_parser("[]", vec![ArrayDecl::from(Vec::new()).into()]);
+    check_parser("[]", vec![ArrayDecl::from(vec![]).into()]);
 }
 
 /// Checks an array with empty slot.

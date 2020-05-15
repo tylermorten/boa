@@ -110,12 +110,12 @@ impl TokenParser for AssignmentExpression {
         if let Some(tok) = cursor.next() {
             match tok.kind {
                 TokenKind::Punctuator(Punctuator::Assign) => {
-                    lhs = Node::from(Assign::new(lhs, self.parse(cursor)?));
+                    lhs = Assign::new(lhs, self.parse(cursor)?).into();
                 }
                 TokenKind::Punctuator(p) if p.as_binop().is_some() => {
                     let expr = self.parse(cursor)?;
                     let binop = p.as_binop().expect("binop disappeared");
-                    lhs = Node::from(BinOp::new(binop, lhs, expr));
+                    lhs = BinOp::new(binop, lhs, expr).into();
                 }
                 _ => {
                     cursor.back();

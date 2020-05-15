@@ -29,7 +29,7 @@ fn inline_block_semicolon_insertion() {
         "while (true) {continue}",
         vec![Node::while_loop(
             Const::from(true),
-            Node::from(Block::from(vec![Node::Continue(None)])),
+            Block::from(vec![Node::Continue(None)]),
         )],
     );
 }
@@ -42,7 +42,7 @@ fn new_line_semicolon_insertion() {
         }",
         vec![Node::while_loop(
             Const::from(true),
-            Node::from(Block::from(vec![Node::continue_node("test")])),
+            Block::from(vec![Node::continue_node("test")]),
         )],
     );
 }
@@ -53,7 +53,7 @@ fn inline_block() {
         "while (true) {continue;}",
         vec![Node::while_loop(
             Const::from(true),
-            Node::from(Block::from(vec![Node::Continue(None)])),
+            Block::from(vec![Node::Continue(None)]),
         )],
     );
 }
@@ -66,7 +66,7 @@ fn new_line_block() {
         }",
         vec![Node::while_loop(
             Const::from(true),
-            Node::from(Block::from(vec![Node::continue_node("test")])),
+            Block::from(vec![Node::continue_node("test")]),
         )],
     );
 }
@@ -79,7 +79,7 @@ fn reserved_label() {
         }",
         vec![Node::while_loop(
             Const::from(true),
-            Node::from(Block::from(vec![Node::continue_node("await")])),
+            Block::from(vec![Node::continue_node("await")]),
         )],
     );
 
@@ -89,7 +89,7 @@ fn reserved_label() {
         }",
         vec![Node::while_loop(
             Const::from(true),
-            Node::from(Block::from(vec![Node::continue_node("yield")])),
+            Block::from(vec![Node::continue_node("yield")]),
         )],
     );
 }
@@ -102,7 +102,7 @@ fn new_line_block_empty() {
         }",
         vec![Node::while_loop(
             Const::from(true),
-            Node::from(Block::from(vec![Node::Continue(None)])),
+            Block::from(vec![Node::Continue(None)]),
         )],
     );
 }
@@ -115,7 +115,7 @@ fn new_line_block_empty_semicolon_insertion() {
         }",
         vec![Node::while_loop(
             Const::from(true),
-            Node::from(Block::from(vec![Node::Continue(None)])),
+            Block::from(vec![Node::Continue(None)]),
         )],
     );
 }

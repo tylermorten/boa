@@ -102,6 +102,6 @@ impl TokenParser for ForStatement {
         let for_loop = Node::for_loop::<_, _, _, Node, Node, Node, _>(init, cond, step, body);
 
         // TODO: do not encapsulate the `for` in a block just to have an inner scope.
-        Ok(Node::from(Block::from(vec![for_loop])))
+        Ok(Block::from(vec![for_loop]).into())
     }
 }

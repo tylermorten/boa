@@ -1,7 +1,7 @@
 use crate::syntax::{
     ast::{
-        node::{BinOp, Block, Identifier, Node, VarDecl, VarDeclList},
-        op::{AssignOp, CompOp, UnaryOp},
+        node::{BinOp, Block, Identifier, Node, UnaryOp, VarDecl, VarDeclList},
+        op::{self, AssignOp, CompOp},
         Const,
     },
     parser::tests::check_parser,
@@ -15,11 +15,12 @@ fn check_do_while() {
             a += 1;
         } while (true)"#,
         vec![Node::do_while_loop(
-            Block::from(vec![Node::from(BinOp::new(
+            Block::from(vec![BinOp::new(
                 AssignOp::Add,
                 Identifier::from("a"),
                 Const::from(1),
-            ))]),
+            )
+            .into()]),
             Const::from(true),
         )],
     );
@@ -40,7 +41,7 @@ fn check_do_while_semicolon_insertion() {
                 )]),
                 BinOp::new(
                     CompOp::LessThan,
-                    Node::unary_op(UnaryOp::IncrementPost, Identifier::from("i")),
+                    UnaryOp::new(op::UnaryOp::IncrementPost, Identifier::from("i")),
                     Const::from(10),
                 ),
             ),

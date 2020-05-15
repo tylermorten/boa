@@ -26,7 +26,7 @@ pub struct Assign {
 
 impl Assign {
     /// Creates an `Assign` AST node.
-    pub fn new<L, R>(lhs: L, rhs: R) -> Self
+    pub(in crate::syntax) fn new<L, R>(lhs: L, rhs: R) -> Self
     where
         L: Into<Node>,
         R: Into<Node>,
@@ -76,7 +76,7 @@ pub struct BinOp {
 
 impl BinOp {
     /// Creates a `BinOp` AST node.
-    pub fn new<O, L, R>(op: O, lhs: L, rhs: R) -> Self
+    pub(in crate::syntax) fn new<O, L, R>(op: O, lhs: L, rhs: R) -> Self
     where
         O: Into<op::BinOp>,
         L: Into<Node>,
@@ -114,5 +114,55 @@ impl fmt::Display for BinOp {
 impl From<BinOp> for Node {
     fn from(op: BinOp) -> Self {
         Self::BinOp(op)
+    }
+}
+
+/// A unary operation is an operation with only one operand.
+///
+/// More information:
+///  - [ECMAScript reference][spec]
+///  - [MDN documentation][mdn]
+///
+/// [spec]: https://tc39.es/ecma262/#prod-UnaryExpression
+/// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Expressions_and_Operators#Unary_operators
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Trace, Finalize, PartialEq)]
+pub struct UnaryOp {
+    op: op::UnaryOp,
+    target: Box<Node>,
+}
+
+impl UnaryOp {
+    /// Creates a new `UnaryOp` AST node.
+    pub(in crate::syntax) fn new<V>(op: op::UnaryOp, target: V) -> Self
+    where
+        V: Into<Node>,
+    {
+        Self {
+            op,
+            target: Box::new(target.into()),
+        }
+    }
+
+    /// Gets the unary operation of the node.
+    pub fn op(&self) -> op::UnaryOp {
+        self.op
+    }
+
+    /// Gets the target of this unary operator.
+    pub fn target(&self) -> &Node {
+        self.target.as_ref()
+    }
+}
+
+impl fmt::Display for UnaryOp {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}{}", self.op, self.target)
+    }
+}
+
+impl From<UnaryOp> for Node {
+    fn from(op: UnaryOp) -> Self {
+        Self::UnaryOp(op)
     }
 }

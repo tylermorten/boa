@@ -37,7 +37,7 @@ fn check_object_short_function() {
         PropertyDefinition::method_definition(
             MethodDefinitionKind::Ordinary,
             "b",
-            FunctionExpr::new(None, Vec::new(), Vec::new()),
+            FunctionExpr::new(None, vec![], vec![]),
         ),
     ];
 
@@ -64,7 +64,7 @@ fn check_object_short_function_arguments() {
             FunctionExpr::new(
                 None,
                 vec![FormalParameter::new("test", None, false)],
-                Vec::new(),
+                vec![],
             ),
         ),
     ];
@@ -88,7 +88,7 @@ fn check_object_getter() {
         PropertyDefinition::method_definition(
             MethodDefinitionKind::Get,
             "b",
-            FunctionExpr::new(None, Vec::new(), Vec::new()),
+            FunctionExpr::new(None, vec![], vec![]),
         ),
     ];
 
@@ -114,7 +114,7 @@ fn check_object_setter() {
             FunctionExpr::new(
                 None,
                 vec![FormalParameter::new("test", None, false)],
-                Vec::new(),
+                vec![],
             ),
         ),
     ];

@@ -4,9 +4,10 @@ use super::Parser;
 use crate::syntax::{
     ast::{
         node::{
-            Assign, BinOp, FunctionDecl, Identifier, Node, StatementList, VarDecl, VarDeclList,
+            Assign, BinOp, FunctionDecl, Identifier, Node, StatementList, UnaryOp, VarDecl,
+            VarDeclList,
         },
-        op::{NumOp, UnaryOp},
+        op::{self, NumOp},
         Const,
     },
     lexer::Lexer,
@@ -45,11 +46,8 @@ fn check_construct_call_precedence() {
     check_parser(
         "new Date().getTime()",
         vec![Node::call(
-            Node::get_const_field(
-                Node::new(Node::call(Node::from(Identifier::from("Date")), Vec::new())),
-                "getTime",
-            ),
-            Vec::new(),
+            Node::get_const_field(Node::call(Identifier::from("Date"), vec![]), "getTime"),
+            vec![],
         )],
     );
 }
@@ -83,10 +81,10 @@ fn hoisting() {
             .into(),
             VarDeclList::from(vec![VarDecl::new(
                 "a",
-                Some(Node::call(Node::from(Identifier::from("hello")), vec![])),
+                Some(Node::call(Identifier::from("hello"), vec![])),
             )])
             .into(),
-            Node::unary_op(UnaryOp::IncrementPost, Node::from(Identifier::from("a"))),
+            UnaryOp::new(op::UnaryOp::IncrementPost, Identifier::from("a")).into(),
         ],
     );
 
@@ -97,8 +95,8 @@ fn hoisting() {
 
             var a;",
         vec![
-            Node::from(Assign::new(Identifier::from("a"), Const::from(10))),
-            Node::unary_op(UnaryOp::IncrementPost, Node::from(Identifier::from("a"))),
+            Assign::new(Identifier::from("a"), Const::from(10)).into(),
+            UnaryOp::new(op::UnaryOp::IncrementPost, Identifier::from("a")).into(),
             VarDeclList::from(vec![VarDecl::new("a", None)]).into(),
         ],
     );

@@ -22,7 +22,6 @@ use crate::{
     realm::Realm,
     syntax::ast::{
         node::{MethodDefinitionKind, Node, PropertyDefinition},
-        op::UnaryOp,
         Const,
     },
 };
@@ -499,62 +498,7 @@ impl Executable for Node {
             Node::FunctionExpr(ref expr) => expr.run(interpreter),
             Node::ArrowFunctionDecl(ref decl) => decl.run(interpreter),
             Node::BinOp(ref op) => op.run(interpreter),
-            Node::UnaryOp(ref op, ref a) => {
-                let v_a = interpreter.exec(a)?;
-                Ok(match *op {
-                    UnaryOp::Minus => Value::from(-v_a.to_number()),
-                    UnaryOp::Plus => Value::from(v_a.to_number()),
-                    UnaryOp::IncrementPost => {
-                        let ret = v_a.clone();
-                        interpreter.set_value(a, Value::from(v_a.to_number() + 1.0))?;
-                        ret
-                    }
-                    UnaryOp::IncrementPre => {
-                        interpreter.set_value(a, Value::from(v_a.to_number() + 1.0))?
-                    }
-                    UnaryOp::DecrementPost => {
-                        let ret = v_a.clone();
-                        interpreter.set_value(a, Value::from(v_a.to_number() - 1.0))?;
-                        ret
-                    }
-                    UnaryOp::DecrementPre => {
-                        interpreter.set_value(a, Value::from(v_a.to_number() - 1.0))?
-                    }
-                    UnaryOp::Not => !v_a,
-                    UnaryOp::Tilde => {
-                        let num_v_a = v_a.to_number();
-                        // NOTE: possible UB: https://github.com/rust-lang/rust/issues/10184
-                        Value::from(if num_v_a.is_nan() {
-                            -1
-                        } else {
-                            !(num_v_a as i32)
-                        })
-                    }
-                    UnaryOp::Void => Value::undefined(),
-                    UnaryOp::Delete => match a.deref() {
-                        Node::GetConstField(ref obj, ref field) => {
-                            Value::boolean(interpreter.exec(obj)?.remove_property(field))
-                        }
-                        Node::GetField(ref obj, ref field) => Value::boolean(
-                            interpreter
-                                .exec(obj)?
-                                .remove_property(&interpreter.exec(field)?.to_string()),
-                        ),
-                        Node::Identifier(_) => Value::boolean(false),
-                        Node::ArrayDecl(_)
-                        | Node::Block(_)
-                        | Node::Const(_)
-                        | Node::FunctionDecl(_)
-                        | Node::FunctionExpr(_)
-                        | Node::New(_)
-                        | Node::Object(_)
-                        | Node::TypeOf(_)
-                        | Node::UnaryOp(_, _) => Value::boolean(true),
-                        _ => panic!("SyntaxError: wrong delete argument {}", self),
-                    },
-                    _ => unimplemented!("{:?}", op),
-                })
-            }
+            Node::UnaryOp(ref op) => op.run(interpreter),
             Node::New(ref call) => {
                 let (callee, args) = match call.as_ref() {
                     Node::Call(callee, args) => (callee, args),

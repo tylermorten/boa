@@ -78,7 +78,7 @@ impl TokenParser for ExponentiationExpression {
         let lhs = UpdateExpression::new(self.allow_yield, self.allow_await).parse(cursor)?;
         if let Some(tok) = cursor.next() {
             if let TokenKind::Punctuator(Punctuator::Exp) = tok.kind {
-                return Ok(Node::from(BinOp::new(NumOp::Exp, lhs, self.parse(cursor)?)));
+                return Ok(BinOp::new(NumOp::Exp, lhs, self.parse(cursor)?).into());
             } else {
                 cursor.back();
             }

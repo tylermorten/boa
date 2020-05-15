@@ -12,7 +12,7 @@ fn check_basic() {
         vec![FunctionDecl::new(
             Box::from("foo"),
             vec![FormalParameter::new("a", None, false)],
-            vec![Node::return_node(Node::from(Identifier::from("a")))],
+            vec![Node::return_node(Identifier::from("a"))],
         )
         .into()],
     );
@@ -26,7 +26,7 @@ fn check_basic_semicolon_insertion() {
         vec![FunctionDecl::new(
             Box::from("foo"),
             vec![FormalParameter::new("a", None, false)],
-            vec![Node::return_node(Node::from(Identifier::from("a")))],
+            vec![Node::return_node(Identifier::from("a"))],
         )
         .into()],
     );
@@ -113,11 +113,11 @@ fn check_arrow() {
                 FormalParameter::new("a", None, false),
                 FormalParameter::new("b", None, false),
             ],
-            vec![Node::return_node(Node::from(BinOp::new(
+            vec![Node::return_node(BinOp::new(
                 NumOp::Add,
                 Identifier::from("a"),
                 Identifier::from("b"),
-            )))],
+            ))],
         )
         .into()],
     );
@@ -133,11 +133,11 @@ fn check_arrow_semicolon_insertion() {
                 FormalParameter::new("a", None, false),
                 FormalParameter::new("b", None, false),
             ],
-            vec![Node::return_node(Node::from(BinOp::new(
+            vec![Node::return_node(BinOp::new(
                 NumOp::Add,
                 Identifier::from("a"),
                 Identifier::from("b"),
-            )))],
+            ))],
         )
         .into()],
     );

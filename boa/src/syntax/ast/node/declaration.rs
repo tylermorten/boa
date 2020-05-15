@@ -91,7 +91,7 @@ impl fmt::Display for VarDecl {
 
 impl VarDecl {
     /// Creates a new variable declaration.
-    pub(crate) fn new<N, I>(name: N, init: I) -> Self
+    pub(in crate::syntax) fn new<N, I>(name: N, init: I) -> Self
     where
         N: Into<Identifier>,
         I: Into<Option<Node>>,
@@ -138,7 +138,7 @@ pub struct FunctionExpr {
 
 impl FunctionExpr {
     /// Creates a new function expression
-    pub(crate) fn new<N, P, B>(name: N, parameters: P, body: B) -> Self
+    pub(in crate::syntax) fn new<N, P, B>(name: N, parameters: P, body: B) -> Self
     where
         N: Into<Option<Box<str>>>,
         P: Into<Box<[FormalParameter]>>,
@@ -210,7 +210,7 @@ pub struct FunctionDecl {
 
 impl FunctionDecl {
     /// Creates a new function declaration.
-    pub(crate) fn new<N, P, B>(name: N, parameters: P, body: B) -> Self
+    pub(in crate::syntax) fn new<N, P, B>(name: N, parameters: P, body: B) -> Self
     where
         N: Into<Option<Box<str>>>,
         P: Into<Box<[FormalParameter]>>,
@@ -288,7 +288,7 @@ pub struct ArrowFunctionDecl {
 
 impl ArrowFunctionDecl {
     /// Creates a new `ArrowFunctionDecl` AST node.
-    pub(crate) fn new<P, B>(params: P, body: B) -> Self
+    pub(in crate::syntax) fn new<P, B>(params: P, body: B) -> Self
     where
         P: Into<Box<[FormalParameter]>>,
         B: Into<StatementList>,
@@ -411,7 +411,7 @@ impl fmt::Display for ConstDecl {
 
 impl ConstDecl {
     /// Creates a new variable declaration.
-    pub(crate) fn new<N, I>(name: N, init: I) -> Self
+    pub(in crate::syntax) fn new<N, I>(name: N, init: I) -> Self
     where
         N: Into<Identifier>,
         I: Into<Node>,

@@ -2,22 +2,24 @@
 
 use crate::syntax::{
     ast::{
-        node::{Assign, Block, FunctionDecl, Identifier, Node, VarDecl, VarDeclList},
-        op::UnaryOp,
-        Const,
+        node::{Assign, Block, FunctionDecl, Identifier, Node, UnaryOp, VarDecl, VarDeclList},
+        op, Const,
     },
     parser::tests::check_parser,
 };
 
 /// Helper function to check a block.
 // TODO: #[track_caller]: https://github.com/rust-lang/rust/issues/47809
-fn check_block(js: &str, block: Block) {
-    check_parser(js, vec![Node::from(block)]);
+fn check_block<B>(js: &str, block: B)
+where
+    B: Into<Box<[Node]>>,
+{
+    check_parser(js, vec![Block::from(block.into()).into()]);
 }
 
 #[test]
 fn empty() {
-    check_block("{}", Block::from(vec![]));
+    check_block("{}", vec![]);
 }
 
 #[test]
@@ -27,10 +29,10 @@ fn non_empty() {
             var a = 10;
             a++;
         }",
-        Block::from(vec![
+        vec![
             VarDeclList::from(vec![VarDecl::new("a", Some(Const::from(10).into()))]).into(),
-            Node::unary_op(UnaryOp::IncrementPost, Node::from(Identifier::from("a"))),
-        ]),
+            UnaryOp::new(op::UnaryOp::IncrementPost, Identifier::from("a")).into(),
+        ],
     );
 
     check_block(
@@ -42,20 +44,20 @@ fn non_empty() {
             var a = hello();
             a++;
         }",
-        Block::from(vec![
+        vec![
             FunctionDecl::new(
                 "hello".to_owned().into_boxed_str(),
                 vec![],
-                vec![Node::return_node(Node::from(Const::from(10)))],
+                vec![Node::return_node(Const::from(10))],
             )
             .into(),
             VarDeclList::from(vec![VarDecl::new(
                 "a",
-                Some(Node::call(Node::from(Identifier::from("hello")), vec![])),
+                Some(Node::call(Identifier::from("hello"), vec![])),
             )])
             .into(),
-            Node::unary_op(UnaryOp::IncrementPost, Node::from(Identifier::from("a"))),
-        ]),
+            UnaryOp::new(op::UnaryOp::IncrementPost, Identifier::from("a")).into(),
+        ],
     );
 }
 
@@ -68,20 +70,20 @@ fn hoisting() {
 
             function hello() { return 10 }
         }",
-        Block::from(vec![
+        vec![
             FunctionDecl::new(
                 "hello".to_owned().into_boxed_str(),
                 vec![],
-                vec![Node::return_node(Node::from(Const::from(10)))],
+                vec![Node::return_node(Const::from(10))],
             )
             .into(),
             VarDeclList::from(vec![VarDecl::new(
                 "a",
-                Some(Node::call(Node::from(Identifier::from("hello")), vec![])),
+                Some(Node::call(Identifier::from("hello"), vec![])),
             )])
             .into(),
-            Node::unary_op(UnaryOp::IncrementPost, Node::from(Identifier::from("a"))),
-        ]),
+            UnaryOp::new(op::UnaryOp::IncrementPost, Identifier::from("a")).into(),
+        ],
     );
 
     check_block(
@@ -91,10 +93,10 @@ fn hoisting() {
 
             var a;
         }",
-        Block::from(vec![
+        vec![
             Assign::new(Identifier::from("a"), Const::from(10)).into(),
-            Node::unary_op(UnaryOp::IncrementPost, Node::from(Identifier::from("a"))),
+            UnaryOp::new(op::UnaryOp::IncrementPost, Identifier::from("a")).into(),
             VarDeclList::from(vec![VarDecl::new("a", None)]).into(),
-        ]),
+        ],
     );
 }

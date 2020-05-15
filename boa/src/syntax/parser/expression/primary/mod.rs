@@ -95,7 +95,7 @@ impl TokenParser for PrimaryExpression {
                 Ok(Const::from(*num).into())
             }
             TokenKind::RegularExpressionLiteral(body, flags) => Ok(Node::new(Node::call(
-                Node::from(Identifier::from("RegExp")),
+                Identifier::from("RegExp"),
                 vec![
                     Const::from(body.as_ref()).into(),
                     Const::from(flags.to_string()).into(),

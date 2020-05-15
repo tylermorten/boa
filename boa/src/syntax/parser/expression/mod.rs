@@ -56,19 +56,19 @@ macro_rules! expression { ($name:ident, $lower:ident, [$( $op:path ),*], [$( $lo
                 match tok.kind {
                     TokenKind::Punctuator(op) if $( op == $op )||* => {
                         let _ = cursor.next().expect("token disappeared");
-                        lhs = Node::from(BinOp::new(
+                        lhs = BinOp::new(
                             op.as_binop().expect("Could not get binary operation."),
                             lhs,
                             $lower::new($( self.$low_param ),*).parse(cursor)?
-                        ));
+                        ).into();
                     }
                     TokenKind::Keyword(op) if $( op == $op )||* => {
                         let _ = cursor.next().expect("token disappeared");
-                        lhs = Node::from(BinOp::new(
+                        lhs = BinOp::new(
                             op.as_binop().expect("Could not get binary operation."),
                             lhs,
                             $lower::new($( self.$low_param ),*).parse(cursor)?
-                        ));
+                        ).into();
                     }
                     _ => break
                 }

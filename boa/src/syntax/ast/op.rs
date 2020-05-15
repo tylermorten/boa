@@ -6,18 +6,6 @@ use std::fmt::{Display, Formatter, Result};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-/// Represents an operator
-pub trait Operator {
-    /// Get the associativity as a boolean that is true if it goes rightwards
-    fn get_assoc(&self) -> bool;
-    /// Get the precedence as an unsigned integer, where the lower it is, the more precedence/priority it has
-    fn get_precedence(&self) -> u64;
-    /// Get the precedence and associativity of this operator
-    fn get_precedence_and_assoc(&self) -> (u64, bool) {
-        (self.get_precedence(), self.get_assoc())
-    }
-}
-
 /// Arithmetic operators take numerical values (either literals or variables)
 /// as their operands and return a single numerical value.
 ///
@@ -591,6 +579,7 @@ pub enum CompOp {
     /// [spec]: https://tc39.es/ecma262/#prod-RelationalExpression
     /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Comparison_Operators#Less_than_or_equal_operator
     LessThanOrEqual,
+
     /// The `in` operator returns true if the specified property is in the specified object or its prototype chain.
     ///
     /// Syntax: `prop in object`
@@ -745,35 +734,6 @@ impl From<LogOp> for BinOp {
 impl From<AssignOp> for BinOp {
     fn from(op: AssignOp) -> Self {
         Self::Assign(op)
-    }
-}
-
-impl Operator for BinOp {
-    fn get_assoc(&self) -> bool {
-        true
-    }
-    fn get_precedence(&self) -> u64 {
-        match *self {
-            Self::Num(NumOp::Exp) => 4,
-            Self::Num(NumOp::Mul) | Self::Num(NumOp::Div) | Self::Num(NumOp::Mod) => 5,
-            Self::Num(NumOp::Add) | Self::Num(NumOp::Sub) => 6,
-            Self::Bit(BitOp::Shl) | Self::Bit(BitOp::Shr) | Self::Bit(BitOp::UShr) => 7,
-            Self::Comp(CompOp::LessThan)
-            | Self::Comp(CompOp::LessThanOrEqual)
-            | Self::Comp(CompOp::GreaterThan)
-            | Self::Comp(CompOp::GreaterThanOrEqual)
-            | Self::Comp(CompOp::In) => 8,
-            Self::Comp(CompOp::Equal)
-            | Self::Comp(CompOp::NotEqual)
-            | Self::Comp(CompOp::StrictEqual)
-            | Self::Comp(CompOp::StrictNotEqual) => 9,
-            Self::Bit(BitOp::And) => 10,
-            Self::Bit(BitOp::Xor) => 11,
-            Self::Bit(BitOp::Or) => 12,
-            Self::Log(LogOp::And) => 13,
-            Self::Log(LogOp::Or) => 14,
-            Self::Assign(_) => 15,
-        }
     }
 }
 

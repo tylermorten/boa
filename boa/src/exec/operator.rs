@@ -5,7 +5,7 @@ use crate::{
     builtins::value::{ResultValue, Value},
     environment::lexical_environment::VariableScope,
     syntax::ast::{
-        node::{Assign, BinOp, Node},
+        node::{Assign, BinOp, Node, UnaryOp},
         op::{self, AssignOp, BitOp, CompOp, LogOp, NumOp},
     },
 };
@@ -138,6 +138,7 @@ impl Executable for BinOp {
 }
 
 impl BinOp {
+    /// Runs the assignment operators.
     fn run_assign(op: AssignOp, v_a: Value, v_b: Value) -> Value {
         match op {
             AssignOp::Add => v_a + v_b,
@@ -152,5 +153,65 @@ impl BinOp {
             AssignOp::Shl => v_a << v_b,
             AssignOp::Shr => v_a << v_b,
         }
+    }
+}
+
+impl Executable for UnaryOp {
+    fn run(&self, interpreter: &mut Interpreter) -> ResultValue {
+        let v_a = self.target().run(interpreter)?;
+
+        Ok(match self.op() {
+            op::UnaryOp::Minus => Value::from(-v_a.to_number()),
+            op::UnaryOp::Plus => Value::from(v_a.to_number()),
+            op::UnaryOp::IncrementPost => {
+                let ret = v_a.clone();
+                interpreter.set_value(self.target(), Value::from(v_a.to_number() + 1.0))?;
+                ret
+            }
+            op::UnaryOp::IncrementPre => {
+                interpreter.set_value(self.target(), Value::from(v_a.to_number() + 1.0))?
+            }
+            op::UnaryOp::DecrementPost => {
+                let ret = v_a.clone();
+                interpreter.set_value(self.target(), Value::from(v_a.to_number() - 1.0))?;
+                ret
+            }
+            op::UnaryOp::DecrementPre => {
+                interpreter.set_value(self.target(), Value::from(v_a.to_number() - 1.0))?
+            }
+            op::UnaryOp::Not => !v_a,
+            op::UnaryOp::Tilde => {
+                let num_v_a = v_a.to_number();
+                // NOTE: possible UB: https://github.com/rust-lang/rust/issues/10184
+                Value::from(if num_v_a.is_nan() {
+                    -1
+                } else {
+                    !(num_v_a as i32)
+                })
+            }
+            op::UnaryOp::Void => Value::undefined(),
+            op::UnaryOp::Delete => match *self.target() {
+                Node::GetConstField(ref obj, ref field) => {
+                    Value::boolean(interpreter.exec(obj)?.remove_property(field))
+                }
+                Node::GetField(ref obj, ref field) => Value::boolean(
+                    interpreter
+                        .exec(obj)?
+                        .remove_property(&interpreter.exec(field)?.to_string()),
+                ),
+                Node::Identifier(_) => Value::boolean(false),
+                Node::ArrayDecl(_)
+                | Node::Block(_)
+                | Node::Const(_)
+                | Node::FunctionDecl(_)
+                | Node::FunctionExpr(_)
+                | Node::New(_)
+                | Node::Object(_)
+                | Node::TypeOf(_)
+                | Node::UnaryOp(_) => Value::boolean(true),
+                _ => panic!("SyntaxError: wrong delete argument {}", self),
+            },
+            op => unimplemented!("{:?}", op),
+        })
     }
 }

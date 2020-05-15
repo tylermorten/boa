@@ -15,13 +15,10 @@ pub use self::{
         VarDeclList,
     },
     identifier::Identifier,
-    operator::{Assign, BinOp},
+    operator::{Assign, BinOp, UnaryOp},
     statement_list::StatementList,
 };
-use super::{
-    op::{Operator, UnaryOp},
-    Const,
-};
+use super::Const;
 use gc::{Finalize, Trace};
 use std::{
     cmp::Ordering,
@@ -405,15 +402,8 @@ pub enum Node {
     /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/this
     This,
 
-    /// A unary operation is an operation with only one operand.
-    ///
-    /// More information:
-    ///  - [ECMAScript reference][spec]
-    ///  - [MDN documentation][mdn]
-    ///
-    /// [spec]: https://tc39.es/ecma262/#prod-UnaryExpression
-    /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Expressions_and_Operators#Unary_operators
-    UnaryOp(UnaryOp, Box<Node>),
+    /// Unary operation node. [More information](./operator/struct.UnaryOp.html)
+    UnaryOp(UnaryOp),
 
     /// Array declaration node. [More information](./declaration/struct.VarDeclList.html).
     VarDeclList(VarDeclList),
@@ -430,35 +420,6 @@ pub enum Node {
     /// [spec]: https://tc39.es/ecma262/#prod-grammar-notation-WhileStatement
     /// [mdn]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/while
     WhileLoop(Box<Node>, Box<Node>),
-}
-
-impl Operator for Node {
-    fn get_assoc(&self) -> bool {
-        match *self {
-            Self::UnaryOp(_, _) | Self::TypeOf(_) | Self::If(_, _, _) | Self::Assign(_) => false,
-            _ => true,
-        }
-    }
-
-    fn get_precedence(&self) -> u64 {
-        match self {
-            Self::GetField(_, _) | Self::GetConstField(_, _) => 1,
-            Self::Call(_, _) => 2,
-            Self::UnaryOp(UnaryOp::IncrementPost, _)
-            | Self::UnaryOp(UnaryOp::IncrementPre, _)
-            | Self::UnaryOp(UnaryOp::DecrementPost, _)
-            | Self::UnaryOp(UnaryOp::DecrementPre, _) => 3,
-            Self::UnaryOp(UnaryOp::Not, _)
-            | Self::UnaryOp(UnaryOp::Tilde, _)
-            | Self::UnaryOp(UnaryOp::Minus, _)
-            | Self::TypeOf(_) => 4,
-            Self::BinOp(inner) => inner.op().get_precedence(),
-            Self::If(_, _, _) => 15,
-            // 16 should be yield
-            Self::Assign(_) => 17,
-            _ => 19,
-        }
-    }
 }
 
 impl Display for Node {
@@ -681,14 +642,6 @@ impl Node {
         Self::This
     }
 
-    /// Creates a `UnaryOp` AST node.
-    pub fn unary_op<V>(op: UnaryOp, val: V) -> Self
-    where
-        V: Into<Self>,
-    {
-        Self::UnaryOp(op, Box::new(val.into()))
-    }
-
     /// Creates a `WhileLoop` AST node.
     pub fn while_loop<C, B>(condition: C, body: B) -> Self
     where
@@ -834,7 +787,7 @@ impl Node {
             Self::FunctionExpr(ref expr) => expr.display(f, indentation),
             Self::ArrowFunctionDecl(ref decl) => decl.display(f, indentation),
             Self::BinOp(ref op) => Display::fmt(op, f),
-            Self::UnaryOp(ref op, ref a) => write!(f, "{}{}", op, a),
+            Self::UnaryOp(ref op) => Display::fmt(op, f),
             Self::Return(Some(ref ex)) => write!(f, "return {}", ex),
             Self::Return(None) => write!(f, "return"),
             Self::Throw(ref ex) => write!(f, "throw {}", ex),
@@ -896,7 +849,7 @@ pub struct FormalParameter {
 
 impl FormalParameter {
     /// Creates a new formal parameter.
-    pub fn new<N>(name: N, init: Option<Node>, is_rest_param: bool) -> Self
+    pub(in crate::syntax) fn new<N>(name: N, init: Option<Node>, is_rest_param: bool) -> Self
     where
         N: Into<Box<str>>,
     {

@@ -12,9 +12,8 @@ mod tests;
 
 use crate::syntax::{
     ast::{
-        Const,
         node::{ArrayDecl, Node},
-        Punctuator,
+        Const, Punctuator,
     },
     parser::{
         expression::AssignmentExpression, AllowAwait, AllowYield, Cursor, ParseError, TokenParser,
