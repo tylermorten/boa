@@ -809,7 +809,7 @@ impl<'a> Lexer<'a> {
                 }),
                 '!' => op!(
                     self,
-                    start_pos, 
+                    start_pos,
                     vop!(self, Punctuator::StrictNotEq, Punctuator::NotEq),
                     Punctuator::Not
                 ),
