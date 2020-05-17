@@ -36,11 +36,13 @@
 pub mod builtins;
 pub mod environment;
 pub mod exec;
+pub mod profiler;
 pub mod realm;
 pub mod syntax;
 use crate::{
     builtins::value::ResultValue,
     exec::{Executor, Interpreter},
+    profiler::MyProfiler,
     realm::Realm,
     syntax::{ast::node::Node, lexer::Lexer, parser::Parser},
 };
@@ -76,6 +78,10 @@ pub fn forward(engine: &mut Interpreter, src: &str) -> String {
 /// Similar to `forward`, except the current value is returned instad of the string
 /// If the interpreter fails parsing an error value is returned instead (error object)
 pub fn forward_val(engine: &mut Interpreter, src: &str) -> ResultValue {
+    // Setup executor
+    let profiler = MyProfiler::new();
+    let _timer = profiler.start_event("Main");
+
     // Setup executor
     match parser_expr(src) {
         Ok(expr) => engine.run(&expr),

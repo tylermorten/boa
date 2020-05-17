@@ -20,6 +20,7 @@ rustc-hash = "1.1.0"
 
 # Optional Dependencies
 serde = { version = "1.0.106", features = ["derive"], optional = true }
+measureme = { version = "0.7.1" }
 
 [dev-dependencies]
 criterion = "0.3.2"
