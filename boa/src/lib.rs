@@ -32,6 +32,7 @@
     clippy::as_conversions,
     missing_doc_code_examples
 )]
+#![feature(thread_id_value)]
 
 pub mod builtins;
 pub mod environment;
@@ -79,7 +80,7 @@ pub fn forward(engine: &mut Interpreter, src: &str) -> String {
 /// If the interpreter fails parsing an error value is returned instead (error object)
 pub fn forward_val(engine: &mut Interpreter, src: &str) -> ResultValue {
     // Setup executor
-    let profiler = MyProfiler::new();
+    let profiler = MyProfiler::default();
     let _timer = profiler.start_event("Main");
 
     // Setup executor
